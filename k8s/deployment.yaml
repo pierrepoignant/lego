@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lego-apps
+  labels:
+    app: lego-apps
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: lego-apps
+  template:
+    metadata:
+      labels:
+        app: lego-apps
+    spec:
+      imagePullSecrets:
+      - name: ovh-registry-secret
+      containers:
+      - name: lego-apps
+        image: 8ie06lx5.c1.gra9.container-registry.ovh.net/lego/lego-apps:latest  # Update with your Docker registry
+        ports:
+        - containerPort: 8501
+          name: streamlit
+          protocol: TCP
+        - containerPort: 5003
+          name: flask
+          protocol: TCP
+        env:
+        - name: DB_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: lego-config
+              key: db_host
+        - name: DB_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: lego-config
+              key: db_port
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: lego-secrets
+              key: db_user
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: lego-secrets
+              key: db_password
+        - name: DB_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: lego-config
+              key: db_name
+        - name: FLASK_PORT
+          value: "5003"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /_stcore/health
+            port: 8501
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /_stcore/health
+            port: 8501
+          initialDelaySeconds: 10
+          periodSeconds: 5
+

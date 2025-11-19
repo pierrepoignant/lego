@@ -1,0 +1,631 @@
+{% extends "base.html" %}
+
+{% block title %}Financial Dashboard - LEGO Apps{% endblock %}
+
+{% block page_title %}📈 Financial Dashboard{% endblock %}
+
+{% block extra_styles %}
+    .filters {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-bottom: 20px;
+        padding: 20px;
+        background: #f7fafc;
+        border-radius: 8px;
+    }
+    
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .filter-group label {
+        font-weight: 600;
+        color: #4a5568;
+        margin-bottom: 5px;
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .filter-group select {
+        padding: 10px;
+        border: 2px solid #e2e8f0;
+        border-radius: 6px;
+        font-size: 1rem;
+        background: white;
+        cursor: pointer;
+        transition: border-color 0.2s;
+    }
+    
+    .filter-group select:focus {
+        outline: none;
+        border-color: #667eea;
+    }
+    
+    .load-button-container {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 30px;
+    }
+    
+    .btn-load {
+        padding: 12px 40px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+    
+    .btn-load:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+    
+    .btn-load:active {
+        transform: translateY(0);
+    }
+    
+    .chart-container {
+        margin-bottom: 40px;
+        padding: 20px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        display: none;
+    }
+    
+    .chart-container.visible {
+        display: block;
+    }
+    
+    canvas {
+        max-height: 400px;
+    }
+    
+    .table-container {
+        overflow-x: auto;
+        margin-top: 30px;
+    }
+    
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.9rem;
+    }
+    
+    th, td {
+        padding: 12px;
+        text-align: right;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    
+    th {
+        background: #667eea;
+        color: white;
+        font-weight: 600;
+        position: sticky;
+        top: 0;
+        text-align: left;
+    }
+    
+    th:first-child, td:first-child {
+        text-align: left;
+        font-weight: 600;
+    }
+    
+    tr:hover {
+        background: #f7fafc;
+    }
+    
+    .year-2024 {
+        color: #3182ce;
+    }
+    
+    .year-2025 {
+        color: #e53e3e;
+    }
+    
+    .loading {
+        text-align: center;
+        padding: 40px;
+        color: #718096;
+    }
+    
+    .metric-label {
+        font-size: 1.2rem;
+        color: #4a5568;
+        margin-bottom: 20px;
+        font-weight: 600;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #718096;
+    }
+    
+    .empty-state h3 {
+        font-size: 1.5rem;
+        margin-bottom: 10px;
+        color: #4a5568;
+    }
+    
+    .empty-state p {
+        font-size: 1rem;
+    }
+    
+    /* Loading overlay */
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+    }
+    
+    .loading-overlay.show {
+        display: flex;
+    }
+    
+    .loading-popup {
+        background: white;
+        padding: 40px;
+        border-radius: 12px;
+        text-align: center;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    }
+    
+    .loading-spinner {
+        width: 50px;
+        height: 50px;
+        border: 5px solid #e2e8f0;
+        border-top: 5px solid #667eea;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 20px;
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    
+    .loading-text {
+        color: #2d3748;
+        font-size: 1.2rem;
+        font-weight: 600;
+    }
+{% endblock %}
+
+{% block content %}
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-popup">
+            <div class="loading-spinner"></div>
+            <div class="loading-text">Loading data...</div>
+        </div>
+    </div>
+    
+    <div class="filters">
+        <div class="filter-group">
+            <label for="metric">Metric</label>
+            <select id="metric">
+                <option value="Net revenue">Net Revenue</option>
+                <option value="Net units">Net Units</option>
+                <option value="CM3">CM3</option>
+                <option value="Brand EBITDA %">Brand EBITDA %</option>
+            </select>
+        </div>
+        
+        <div class="filter-group">
+            <label for="brand">Brand (Optional)</label>
+            <select id="brand">
+                <option value="">All Brands</option>
+                {% for brand in brands %}
+                <option value="{{ brand[0] }}">{{ brand[1] }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="filter-group">
+            <label for="category">Category (Optional)</label>
+            <select id="category">
+                <option value="">All Categories</option>
+                {% for category in categories %}
+                <option value="{{ category[0] }}">{{ category[1] }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="filter-group">
+            <label for="marketplace">Marketplace (Optional)</label>
+            <select id="marketplace">
+                <option value="">All Marketplaces</option>
+                {% for mp in marketplaces %}
+                <option value="{{ mp.code }}">{{ mp.country_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+    
+    <div class="load-button-container">
+        <button class="btn-load" onclick="loadData()">📊 Load Data</button>
+        <button class="btn-load" onclick="downloadData()" style="margin-left: 15px; background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);">📥 Download CSV</button>
+    </div>
+    
+    <div id="emptyState" class="empty-state">
+        <h3>📊 Ready to Load Data</h3>
+        <p>Select your filters above and click "Load Data" to view the financial dashboard</p>
+    </div>
+    
+    <div class="chart-container" id="chartContainer">
+        <div class="metric-label" id="chartTitle">Net Revenue (USD): 2024 vs 2025</div>
+        <canvas id="myChart"></canvas>
+    </div>
+    
+    <div class="table-container" id="tableContainer" style="display: none;">
+        <h3 style="margin-bottom: 15px;" id="tableTitle">Monthly Data (USD)</h3>
+        <table id="dataTable">
+            <thead>
+                <tr>
+                    <th>Month</th>
+                    <th class="year-2024">2024 <span id="unitLabel2024">(USD)</span></th>
+                    <th class="year-2025">2025 <span id="unitLabel2025">(USD)</span></th>
+                    <th>Difference <span id="unitLabelDiff">(USD)</span></th>
+                    <th>% Change</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+            </tbody>
+        </table>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        let chart = null;
+        
+        function formatCurrency(value) {
+            return '$' + value.toLocaleString('en-US', { 
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            });
+        }
+        
+        function formatNumber(value) {
+            return value.toLocaleString('en-US', { 
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            });
+        }
+        
+        function formatPercentage(value) {
+            return value.toFixed(1) + '%';
+        }
+        
+        function formatValue(value, metric) {
+            // Format based on metric type
+            if (metric === 'Brand EBITDA %') {
+                return formatPercentage(value);
+            } else if (metric === 'Net units') {
+                return formatNumber(value);
+            } else {
+                return formatCurrency(value);
+            }
+        }
+        
+        function loadData() {
+            const metric = document.getElementById('metric').value;
+            const brandId = document.getElementById('brand').value;
+            const categoryId = document.getElementById('category').value;
+            const marketplace = document.getElementById('marketplace').value;
+            
+            console.log('=== Dashboard Data Loading Started ===');
+            console.log('Metric:', metric);
+            console.log('Brand ID:', brandId || 'All Brands');
+            console.log('Category ID:', categoryId || 'All Categories');
+            console.log('Marketplace:', marketplace || 'All Marketplaces');
+            
+            // Show loading overlay
+            document.getElementById('loadingOverlay').classList.add('show');
+            
+            // Hide empty state
+            document.getElementById('emptyState').style.display = 'none';
+            
+            // Build query string
+            let params = new URLSearchParams({
+                metric: metric
+            });
+            
+            if (brandId) params.append('brand_id', brandId);
+            if (categoryId) params.append('category_id', categoryId);
+            if (marketplace) params.append('marketplace', marketplace);
+            
+            const apiUrl = '/api/dashboard-data?' + params.toString();
+            console.log('API URL:', apiUrl);
+            console.log('Fetching data...');
+            
+            const startTime = Date.now();
+            
+            // Fetch data from API
+            fetch(apiUrl)
+                .then(response => {
+                    console.log('Response received. Status:', response.status);
+                    return response.json();
+                })
+                .then(data => {
+                    const loadTime = Date.now() - startTime;
+                    console.log('Data loaded successfully in', loadTime, 'ms');
+                    console.log('Data summary:', {
+                        metric: data.metric,
+                        months: data.months.length,
+                        total_2024: data.data_2024.reduce((a, b) => a + b, 0).toFixed(2),
+                        total_2025: data.data_2025.filter(v => v !== null).reduce((a, b) => a + b, 0).toFixed(2)
+                    });
+                    
+                    // Show chart and table
+                    document.getElementById('chartContainer').classList.add('visible');
+                    document.getElementById('tableContainer').style.display = 'block';
+                    
+                    // Update UI
+                    updateChart(data);
+                    updateTable(data);
+                    
+                    // Update titles and unit labels based on metric
+                    let unitLabel;
+                    if (data.metric === 'Brand EBITDA %') {
+                        unitLabel = '(%)';
+                    } else if (data.metric === 'Net units') {
+                        unitLabel = '(units)';
+                    } else {
+                        unitLabel = '(USD)';
+                    }
+                    
+                    document.getElementById('chartTitle').textContent = 
+                        `${data.metric} ${unitLabel}: 2024 vs 2025`;
+                    document.getElementById('tableTitle').textContent = 
+                        `Monthly Data ${unitLabel}`;
+                    document.getElementById('unitLabel2024').textContent = unitLabel;
+                    document.getElementById('unitLabel2025').textContent = unitLabel;
+                    document.getElementById('unitLabelDiff').textContent = unitLabel;
+                    
+                    console.log('Chart and table updated');
+                    console.log('=== Dashboard Data Loading Complete ===');
+                })
+                .catch(error => {
+                    console.error('!!! Error loading data !!!');
+                    console.error('Error details:', error);
+                    alert('Error loading data. Please try again.\n\nError: ' + error.message);
+                })
+                .finally(() => {
+                    // Hide loading overlay
+                    document.getElementById('loadingOverlay').classList.remove('show');
+                });
+        }
+        
+        function updateChart(data) {
+            const ctx = document.getElementById('myChart').getContext('2d');
+            
+            if (chart) {
+                chart.destroy();
+            }
+            
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.months,
+                    datasets: [
+                        {
+                            label: '2024',
+                            data: data.data_2024,
+                            borderColor: '#3182ce',
+                            backgroundColor: 'rgba(49, 130, 206, 0.1)',
+                            borderWidth: 3,
+                            tension: 0.4,
+                            pointRadius: 5,
+                            pointHoverRadius: 7
+                        },
+                        {
+                            label: '2025',
+                            data: data.data_2025,
+                            borderColor: '#e53e3e',
+                            backgroundColor: 'rgba(229, 62, 62, 0.1)',
+                            borderWidth: 3,
+                            tension: 0.4,
+                            pointRadius: 5,
+                            pointHoverRadius: 7
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                },
+                                padding: 20
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    const metric = document.getElementById('metric').value;
+                                    label += formatValue(context.parsed.y, metric);
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    const metric = document.getElementById('metric').value;
+                                    return formatValue(value, metric);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function updateTable(data) {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+            
+            const isEBITDA = data.metric === 'Brand EBITDA %';
+            
+            let total2024_JanOct = 0;
+            let total2025_JanOct = 0;
+            let count2024_JanOct = 0;
+            let count2025_JanOct = 0;
+            
+            for (let i = 0; i < data.months.length; i++) {
+                const val2024 = data.data_2024[i] || 0;
+                const val2025 = data.data_2025[i] || 0;
+                const diff = val2025 - val2024;
+                const pctChange = val2024 > 0 ? ((val2025 - val2024) / val2024 * 100) : 0;
+                
+                // For totals/averages, only include Jan-Oct (first 10 months)
+                if (i < 10) {
+                    if (isEBITDA) {
+                        // For EBITDA %, calculate average
+                        total2024_JanOct += val2024;
+                        total2025_JanOct += val2025;
+                        count2024_JanOct++;
+                        if (data.data_2025[i] !== null) count2025_JanOct++;
+                    } else {
+                        // For revenue/CM3, calculate sum
+                        total2024_JanOct += val2024;
+                        total2025_JanOct += val2025;
+                    }
+                }
+                
+                const row = document.createElement('tr');
+                const isUnits = data.metric === 'Net units';
+                row.innerHTML = `
+                    <td>${data.months[i]}</td>
+                    <td class="year-2024">${formatValue(val2024, data.metric)}</td>
+                    <td class="year-2025">${data.data_2025[i] !== null ? formatValue(val2025, data.metric) : '-'}</td>
+                    <td style="color: ${diff >= 0 ? '#38a169' : '#e53e3e'}">${data.data_2025[i] !== null ? (isEBITDA ? formatPercentage(diff) : (isUnits ? formatNumber(diff) : formatValue(diff, data.metric))) : '-'}</td>
+                    <td style="color: ${pctChange >= 0 ? '#38a169' : '#e53e3e'}">${data.data_2025[i] !== null ? formatPercentage(pctChange) : '-'}</td>
+                `;
+                tbody.appendChild(row);
+            }
+            
+            // Add totals/average row (Jan-Oct comparison)
+            let final2024, final2025, totalDiff, totalPctChange;
+            
+            if (isEBITDA) {
+                // Calculate average for EBITDA %
+                final2024 = count2024_JanOct > 0 ? total2024_JanOct / count2024_JanOct : 0;
+                final2025 = count2025_JanOct > 0 ? total2025_JanOct / count2025_JanOct : 0;
+                totalDiff = final2025 - final2024;
+                totalPctChange = final2024 > 0 ? ((final2025 - final2024) / final2024 * 100) : 0;
+            } else {
+                // Calculate sum for revenue/CM3
+                final2024 = total2024_JanOct;
+                final2025 = total2025_JanOct;
+                totalDiff = final2025 - final2024;
+                totalPctChange = final2024 > 0 ? ((final2025 - final2024) / final2024 * 100) : 0;
+            }
+            
+            const totalsRow = document.createElement('tr');
+            totalsRow.style.fontWeight = 'bold';
+            totalsRow.style.borderTop = '3px solid #667eea';
+            totalsRow.style.background = '#f7fafc';
+            const isUnits = data.metric === 'Net units';
+            totalsRow.innerHTML = `
+                <td style="font-weight: 800;">${isEBITDA ? 'AVERAGE (Jan-Oct)' : 'TOTAL (Jan-Oct)'}</td>
+                <td class="year-2024" style="font-weight: 800;">${formatValue(final2024, data.metric)}</td>
+                <td class="year-2025" style="font-weight: 800;">${formatValue(final2025, data.metric)}</td>
+                <td style="color: ${totalDiff >= 0 ? '#38a169' : '#e53e3e'}; font-weight: 800;">${isEBITDA ? formatPercentage(totalDiff) : (isUnits ? formatNumber(totalDiff) : formatValue(totalDiff, data.metric))}</td>
+                <td style="color: ${totalPctChange >= 0 ? '#38a169' : '#e53e3e'}; font-weight: 800;">${formatPercentage(totalPctChange)}</td>
+            `;
+            tbody.appendChild(totalsRow);
+        }
+        
+        function downloadData() {
+            const brandId = document.getElementById('brand').value;
+            const categoryId = document.getElementById('category').value;
+            const marketplace = document.getElementById('marketplace').value;
+            
+            // Build query string
+            let params = new URLSearchParams();
+            if (brandId) params.append('brand_id', brandId);
+            if (categoryId) params.append('category_id', categoryId);
+            if (marketplace) params.append('marketplace', marketplace);
+            
+            const downloadUrl = '/export/dashboard-csv?' + params.toString();
+            
+            // Trigger download
+            window.location.href = downloadUrl;
+        }
+        
+        // Auto-load data if URL parameters are present
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const brandId = urlParams.get('brand_id');
+            const categoryId = urlParams.get('category_id');
+            const marketplace = urlParams.get('marketplace');
+            const metric = urlParams.get('metric');
+            
+            let autoLoad = false;
+            
+            // Set brand if present in URL
+            if (brandId) {
+                document.getElementById('brand').value = brandId;
+                autoLoad = true;
+            }
+            
+            // Set category if present in URL
+            if (categoryId) {
+                document.getElementById('category').value = categoryId;
+                autoLoad = true;
+            }
+            
+            // Set marketplace if present in URL
+            if (marketplace) {
+                document.getElementById('marketplace').value = marketplace;
+                autoLoad = true;
+            }
+            
+            // Set metric if present in URL
+            if (metric) {
+                document.getElementById('metric').value = metric;
+            }
+            
+            // Auto-load data if any filter was set
+            if (autoLoad) {
+                console.log('Auto-loading data from URL parameters...');
+                loadData();
+            }
+        });
+    </script>
+{% endblock %}
+

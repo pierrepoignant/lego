@@ -1,0 +1,700 @@
+{% extends "base.html" %}
+
+{% block title %}{{ asin.title or asin.name or asin.asin }} - ASIN Details{% endblock %}
+
+{% block page_title %}📦 Product Details{% endblock %}
+
+{% block extra_styles %}
+    .back-link {
+        display: inline-block;
+        margin-bottom: 20px;
+        color: #667eea;
+        text-decoration: none;
+        font-weight: 600;
+    }
+    
+    .back-link:hover {
+        text-decoration: underline;
+    }
+    
+    .bucket-badge {
+        display: inline-block;
+        padding: 6px 12px;
+        border-radius: 14px;
+        font-size: 12px;
+        font-weight: 600;
+        color: white;
+        margin: 4px;
+    }
+    
+    .buckets-container {
+        margin-top: 10px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+    }
+    
+    .product-header {
+        display: grid;
+        grid-template-columns: 400px 1fr;
+        gap: 40px;
+        margin-bottom: 40px;
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .main-image-container {
+        position: relative;
+    }
+    
+    .main-image {
+        width: 100%;
+        height: auto;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+    }
+    
+    .product-info h1 {
+        font-size: 1.5rem;
+        color: #2d3748;
+        margin-bottom: 20px;
+        line-height: 1.4;
+    }
+    
+    .meta-info {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .meta-item {
+        padding: 12px;
+        background: #f7fafc;
+        border-radius: 6px;
+    }
+    
+    .meta-label {
+        font-size: 0.75rem;
+        color: #718096;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 5px;
+    }
+    
+    .meta-value {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #2d3748;
+    }
+    
+    .price {
+        color: #e53e3e;
+    }
+    
+    .rating {
+        color: #f6ad55;
+    }
+    
+    .positive {
+        color: #38a169;
+    }
+    
+    .amazon-link {
+        display: inline-block;
+        margin-top: 15px;
+        padding: 12px 24px;
+        background: #ff9900;
+        color: white;
+        text-decoration: none;
+        border-radius: 6px;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+    
+    .amazon-link:hover {
+        background: #ff8800;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(255, 153, 0, 0.3);
+    }
+    
+    .image-gallery {
+        margin: 30px 0;
+        background: white;
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .image-gallery h2 {
+        color: #2d3748;
+        margin-bottom: 20px;
+        font-size: 1.3rem;
+    }
+    
+    .gallery-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 15px;
+    }
+    
+    .gallery-image {
+        width: 100%;
+        height: 150px;
+        object-fit: cover;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
+    
+    .gallery-image:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    .product-details {
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        margin-bottom: 30px;
+    }
+    
+    .product-details h2 {
+        color: #2d3748;
+        margin-bottom: 20px;
+        font-size: 1.3rem;
+    }
+    
+    .details-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+    }
+    
+    .detail-item {
+        padding: 15px;
+        background: #f7fafc;
+        border-radius: 8px;
+        border-left: 4px solid #667eea;
+    }
+    
+    .detail-label {
+        font-size: 0.85rem;
+        color: #718096;
+        font-weight: 600;
+        margin-bottom: 5px;
+    }
+    
+    .detail-value {
+        color: #2d3748;
+        line-height: 1.5;
+    }
+    
+    .reviews-section {
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        margin-bottom: 30px;
+    }
+    
+    .reviews-section h2 {
+        color: #2d3748;
+        margin-bottom: 20px;
+        font-size: 1.3rem;
+    }
+    
+    .review-bars {
+        margin-bottom: 20px;
+    }
+    
+    .review-bar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+    
+    .star-label {
+        min-width: 60px;
+        font-size: 0.9rem;
+        color: #4a5568;
+    }
+    
+    .bar-container {
+        flex: 1;
+        height: 20px;
+        background: #e2e8f0;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    
+    .bar-fill {
+        height: 100%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        transition: width 0.3s;
+    }
+    
+    .bar-percentage {
+        min-width: 40px;
+        text-align: right;
+        font-weight: 600;
+        color: #2d3748;
+    }
+    
+    .revenue-chart-section {
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        margin-bottom: 30px;
+    }
+    
+    .revenue-chart-section h2 {
+        color: #2d3748;
+        margin-bottom: 20px;
+        font-size: 1.3rem;
+    }
+    
+    .load-chart-btn {
+        padding: 12px 30px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        margin-bottom: 20px;
+    }
+    
+    .load-chart-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    .chart-container {
+        display: none;
+    }
+    
+    .chart-container.visible {
+        display: block;
+    }
+    
+    .ltm-metrics {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+        padding: 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 12px;
+        color: white;
+    }
+    
+    .ltm-metric {
+        text-align: center;
+    }
+    
+    .ltm-label {
+        font-size: 0.9rem;
+        opacity: 0.9;
+        margin-bottom: 5px;
+    }
+    
+    .ltm-value {
+        font-size: 1.8rem;
+        font-weight: 700;
+    }
+{% endblock %}
+
+{% block content %}
+    <a href="{{ url_for('brand_asins', brand_id=asin.brand_id) }}" class="back-link">← Back to {{ asin.brand }} ASINs</a>
+    
+    <!-- Product Header -->
+    <div class="product-header">
+        <div class="main-image-container">
+            {% if asin.main_image %}
+                <img src="{{ asin.main_image }}" alt="{{ asin.title or asin.name }}" class="main-image">
+            {% else %}
+                <div style="width: 100%; height: 400px; background: #f7fafc; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #a0aec0;">
+                    No image available
+                </div>
+            {% endif %}
+        </div>
+        
+        <div class="product-info">
+            <h1>{{ asin.title or asin.name or 'Product ' + asin.asin }}</h1>
+            
+            <div class="meta-info">
+                <div class="meta-item" style="grid-column: 1 / -1;">
+                    <div class="meta-label">ASIN</div>
+                    <div class="meta-value">{{ asin.asin }}</div>
+                    {% if asin_buckets and asin_buckets|length > 0 %}
+                    <div class="buckets-container">
+                        <span style="font-size: 12px; color: #718096; margin-right: 5px;">Top ASIN Buckets:</span>
+                        {% for bucket in asin_buckets %}
+                        <span class="bucket-badge" style="background-color: {{ bucket.color }}">
+                            {{ bucket.name }}
+                        </span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                {% if asin.price %}
+                <div class="meta-item">
+                    <div class="meta-label">Price</div>
+                    <div class="meta-value price">${{ "{:.2f}".format(asin.price) }}</div>
+                </div>
+                {% endif %}
+                
+                {% if asin.rating %}
+                <div class="meta-item">
+                    <div class="meta-label">Rating</div>
+                    <div class="meta-value rating">{{ "{:.1f}".format(asin.rating) }} ⭐</div>
+                </div>
+                {% endif %}
+                
+                {% if asin.rating_count %}
+                <div class="meta-item">
+                    <div class="meta-label">Reviews</div>
+                    <div class="meta-value">{{ "{:,}".format(asin.rating_count) }}</div>
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="meta-info">
+                <div class="meta-item">
+                    <div class="meta-label">Brand</div>
+                    <div class="meta-value">{{ asin.brand }}</div>
+                </div>
+                
+                {% if asin.category %}
+                <div class="meta-item">
+                    <div class="meta-label">Category</div>
+                    <div class="meta-value">{{ asin.category }}</div>
+                </div>
+                {% endif %}
+            </div>
+            
+            <a href="https://www.amazon.com/dp/{{ asin.asin }}" target="_blank" class="amazon-link">
+                🛒 View on Amazon
+            </a>
+        </div>
+    </div>
+    
+    <!-- LTM Metrics -->
+    {% if asin.ltm_revenues or asin.ltm_brand_ebitda or asin.stock_value %}
+    <div class="ltm-metrics">
+        {% if asin.ltm_revenues %}
+        <div class="ltm-metric">
+            <div class="ltm-label">LTM Revenue</div>
+            <div class="ltm-value">${{ "{:,.0f}".format(asin.ltm_revenues) }}</div>
+        </div>
+        {% endif %}
+        
+        {% if asin.ltm_brand_ebitda %}
+        <div class="ltm-metric">
+            <div class="ltm-label">LTM EBITDA %</div>
+            <div class="ltm-value">{{ "{:.1f}".format(asin.ltm_brand_ebitda) }}%</div>
+        </div>
+        {% endif %}
+        
+        {% if asin.stock_value %}
+        <div class="ltm-metric">
+            <div class="ltm-label">Stock Value</div>
+            <div class="ltm-value">${{ "{:,.0f}".format(asin.stock_value) }}</div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+    
+    <!-- Revenue Chart Section -->
+    <div class="revenue-chart-section">
+        <h2>📈 Revenue History</h2>
+        <div id="chartContainer" class="chart-container visible">
+            <canvas id="revenueChart"></canvas>
+        </div>
+    </div>
+    
+    {% if scraped_data %}
+        {% set product = scraped_data.data.json[0].data.results[0] if scraped_data.data and scraped_data.data.json %}
+        
+        {% if product %}
+        <!-- Image Gallery -->
+        {% if product.images %}
+        <div class="image-gallery">
+            <h2>📸 Product Images</h2>
+            <div class="gallery-grid">
+                {% for image in product.images %}
+                    {% if image and 'transparent-pixel' not in image %}
+                    <img src="{{ image }}" alt="Product image" class="gallery-image" onclick="window.open('{{ image }}', '_blank')">
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Product Details -->
+        <div class="product-details">
+            <h2>📋 Product Details</h2>
+            <div class="details-grid">
+                {% if product.brand %}
+                <div class="detail-item">
+                    <div class="detail-label">Brand</div>
+                    <div class="detail-value">{{ product.brand }}</div>
+                </div>
+                {% endif %}
+                
+                {% if product.size %}
+                <div class="detail-item">
+                    <div class="detail-label">Size</div>
+                    <div class="detail-value">{{ product.size }}</div>
+                </div>
+                {% endif %}
+                
+                {% if product.category_name %}
+                <div class="detail-item">
+                    <div class="detail-label">Amazon Category</div>
+                    <div class="detail-value">{{ product.category_name }}</div>
+                </div>
+                {% endif %}
+                
+                {% if product.seller %}
+                <div class="detail-item">
+                    <div class="detail-label">Seller</div>
+                    <div class="detail-value">{{ product.seller }}</div>
+                </div>
+                {% endif %}
+                
+                {% if product.shipper %}
+                <div class="detail-item">
+                    <div class="detail-label">Shipper</div>
+                    <div class="detail-value">{{ product.shipper }}</div>
+                </div>
+                {% endif %}
+                
+                {% if product.sales %}
+                <div class="detail-item">
+                    <div class="detail-label">Sales</div>
+                    <div class="detail-value">{{ product.sales }}</div>
+                </div>
+                {% endif %}
+                
+                {% if product.delivery_time %}
+                <div class="detail-item">
+                    <div class="detail-label">Delivery Time</div>
+                    <div class="detail-value">{{ product.delivery_time }}</div>
+                </div>
+                {% endif %}
+                
+                {% if product.first_date %}
+                <div class="detail-item">
+                    <div class="detail-label">First Available</div>
+                    <div class="detail-value">{{ product.first_date }}</div>
+                </div>
+                {% endif %}
+                
+                {% if product.product_weight %}
+                <div class="detail-item">
+                    <div class="detail-label">Weight</div>
+                    <div class="detail-value">{{ product.product_weight }}</div>
+                </div>
+                {% endif %}
+                
+                {% if product.product_dims %}
+                <div class="detail-item">
+                    <div class="detail-label">Dimensions</div>
+                    <div class="detail-value">{{ product.product_dims }}</div>
+                </div>
+                {% endif %}
+            </div>
+            
+            {% if product.description %}
+            <div style="margin-top: 25px;">
+                <h3 style="color: #2d3748; margin-bottom: 15px;">Description</h3>
+                <div style="color: #4a5568; line-height: 1.7;">{{ product.description }}</div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Customer Reviews Distribution -->
+        {% if product.customerReviews %}
+        <div class="reviews-section">
+            <h2>⭐ Customer Reviews Distribution</h2>
+            <div class="review-bars" id="reviewBars"></div>
+        </div>
+        {% endif %}
+        
+        <!-- Detailed Customer Reviews by Topic -->
+        {% if product.reviews %}
+        <div class="reviews-section">
+            <h2>💬 Customer Review Insights</h2>
+            {% for topic, data in product.reviews.items() %}
+            <div style="margin-bottom: 30px; padding: 20px; background: #f7fafc; border-radius: 8px;">
+                <h3 style="color: #2d3748; margin-bottom: 15px; font-size: 1.2rem;">{{ topic }}</h3>
+                
+                {# Just display everything as cleaned up text #}
+                <div style="color: #2d3748; line-height: 1.8; white-space: pre-wrap;">{{ data | tojson | replace('[', '') | replace(']', '') | replace('{', '') | replace('}', '') | replace('"', '') | replace("'", '') | replace('\\n', '\n') | replace('\\', '') | replace('Read more', '') | replace(',', ' ') | replace('u0027', "'") }}</div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        <!-- Additional Product Images -->
+        {% if product.product_description %}
+        <div class="image-gallery">
+            <h2>📷 Additional Product Images</h2>
+            <div class="gallery-grid">
+                {% for section in product.product_description %}
+                    {% if section.images %}
+                        {% for image in section.images %}
+                            {% if image %}
+                            <img src="{{ image }}" alt="Additional product image" class="gallery-image" onclick="window.open('{{ image }}', '_blank')">
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        {% endif %}
+    {% endif %}
+{% endblock %}
+
+{% block scripts %}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        let chart = null;
+        
+        // Parse and display customer reviews
+        {% if scraped_data and scraped_data.data.json[0].data.results[0].customerReviews %}
+        const reviewsString = {{ scraped_data.data.json[0].data.results[0].customerReviews | tojson | safe }};
+        const reviewBars = document.getElementById('reviewBars');
+        
+        if (reviewBars && reviewsString) {
+            try {
+                // Parse the JSON string
+                const reviews = JSON.parse(reviewsString);
+                const stars = ['5 star', '4 star', '3 star', '2 star', '1 star'];
+                stars.forEach(star => {
+                    const percentage = parseInt(reviews[star]) || 0;
+                    const div = document.createElement('div');
+                    div.className = 'review-bar';
+                    div.innerHTML = `
+                        <span class="star-label">${star}</span>
+                        <div class="bar-container">
+                            <div class="bar-fill" style="width: ${percentage}%"></div>
+                        </div>
+                        <span class="bar-percentage">${percentage}%</span>
+                    `;
+                    reviewBars.appendChild(div);
+                });
+            } catch (e) {
+                console.error('Error parsing reviews:', e);
+            }
+        }
+        {% endif %}
+        
+        // Load revenue chart automatically on page load
+        function loadRevenueChart() {
+            fetch('/api/asin-revenue-data/{{ asin.asin }}')
+                .then(response => response.json())
+                .then(data => {
+                    updateChart(data);
+                })
+                .catch(error => {
+                    console.error('Error loading revenue data:', error);
+                    document.getElementById('chartContainer').innerHTML = 
+                        '<p style="text-align: center; color: #e53e3e; padding: 20px;">Error loading revenue data</p>';
+                });
+        }
+        
+        // Auto-load chart on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadRevenueChart();
+        });
+        
+        function updateChart(data) {
+            const ctx = document.getElementById('revenueChart').getContext('2d');
+            
+            if (chart) {
+                chart.destroy();
+            }
+            
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.months,
+                    datasets: [
+                        {
+                            label: '2024',
+                            data: data.data_2024,
+                            borderColor: '#3182ce',
+                            backgroundColor: 'rgba(49, 130, 206, 0.1)',
+                            borderWidth: 3,
+                            tension: 0.4,
+                            pointRadius: 5,
+                            pointHoverRadius: 7
+                        },
+                        {
+                            label: '2025',
+                            data: data.data_2025,
+                            borderColor: '#e53e3e',
+                            backgroundColor: 'rgba(229, 62, 62, 0.1)',
+                            borderWidth: 3,
+                            tension: 0.4,
+                            pointRadius: 5,
+                            pointHoverRadius: 7
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    label += '$' + context.parsed.y.toLocaleString('en-US', {
+                                        minimumFractionDigits: 0,
+                                        maximumFractionDigits: 0
+                                    });
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value.toLocaleString('en-US', {
+                                        minimumFractionDigits: 0,
+                                        maximumFractionDigits: 0
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+{% endblock %}
+

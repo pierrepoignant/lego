@@ -1,0 +1,1094 @@
+{% extends "base.html" %}
+
+{% block title %}All ASINs{% endblock %}
+
+{% block page_title %}📦 All ASINs{% endblock %}
+
+{% block extra_styles %}
+    .filter-section {
+        background: #f7fafc;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 25px;
+    }
+    
+    .filter-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr 1fr 2fr 0.7fr 1fr;
+        gap: 15px;
+        align-items: end;
+    }
+    
+    .checkbox-filter {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 0;
+        cursor: pointer;
+    }
+    
+    .checkbox-filter input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+    }
+    
+    .checkbox-filter label {
+        cursor: pointer;
+        font-weight: 600;
+        color: #4a5568;
+        font-size: 0.875rem;
+        margin: 0 !important;
+    }
+    
+    .bulk-actions {
+        background: white;
+        padding: 15px 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        display: flex;
+        gap: 15px;
+        align-items: center;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        border: 1px solid #e2e8f0;
+    }
+    
+    .bulk-actions-btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 14px;
+        transition: all 0.2s;
+    }
+    
+    .bulk-actions-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    .bulk-actions-btn:disabled {
+        background: #a0aec0;
+        cursor: not-allowed;
+        opacity: 0.5;
+    }
+    
+    .selection-count {
+        font-weight: 600;
+        color: #667eea;
+    }
+    
+    .asin-checkbox {
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+    }
+    
+    /* Modal styles */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0,0,0,0.5);
+    }
+    
+    .modal.show {
+        display: block;
+    }
+    
+    .modal-content {
+        background-color: #fefefe;
+        margin: 5% auto;
+        padding: 30px;
+        border-radius: 12px;
+        width: 90%;
+        max-width: 600px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    }
+    
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+    }
+    
+    .modal-header h2 {
+        color: #2d3748;
+        margin: 0;
+    }
+    
+    .close {
+        color: #a0aec0;
+        font-size: 32px;
+        font-weight: bold;
+        cursor: pointer;
+        line-height: 1;
+    }
+    
+    .close:hover,
+    .close:focus {
+        color: #2d3748;
+    }
+    
+    .modal-body {
+        margin-bottom: 25px;
+    }
+    
+    .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #4a5568;
+    }
+    
+    .form-group select,
+    .form-group input {
+        width: 100%;
+        padding: 12px 15px;
+        font-size: 14px;
+        border: 2px solid #e2e8f0;
+        border-radius: 6px;
+        background: white;
+    }
+    
+    .form-group select:focus,
+    .form-group input:focus {
+        outline: none;
+        border-color: #667eea;
+    }
+    
+    .modal-footer {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+    }
+    
+    .modal-btn {
+        padding: 10px 24px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 14px;
+        transition: all 0.2s;
+    }
+    
+    .modal-btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    
+    .modal-btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    .modal-btn-secondary {
+        background: #e2e8f0;
+        color: #4a5568;
+    }
+    
+    .modal-btn-secondary:hover {
+        background: #cbd5e0;
+    }
+    
+    .create-bucket-section {
+        display: none;
+        margin-top: 20px;
+        padding: 20px;
+        background: #f7fafc;
+        border-radius: 8px;
+    }
+    
+    .create-bucket-section.show {
+        display: block;
+    }
+    
+    .badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    
+    .badge-bucket {
+        color: white;
+        font-weight: 600;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    }
+    
+    .bucket-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 500;
+        color: white;
+        margin: 2px;
+    }
+    
+    .filter-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #4a5568;
+        font-size: 0.875rem;
+    }
+    
+    .filter-group select,
+    .filter-group input {
+        width: 100%;
+        padding: 10px 15px;
+        font-size: 14px;
+        border: 2px solid #e2e8f0;
+        border-radius: 6px;
+        background: white;
+    }
+    
+    .filter-group select:focus,
+    .filter-group input:focus {
+        outline: none;
+        border-color: #667eea;
+    }
+    
+    .filter-btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 14px;
+        transition: all 0.2s;
+    }
+    
+    .filter-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    .stats-summary {
+        margin-bottom: 20px;
+        padding: 0;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+    }
+    
+    .summary-header {
+        background: #667eea;
+        color: white;
+        padding: 15px 20px;
+        font-weight: 700;
+        font-size: 16px;
+        border-bottom: 2px solid #5568d3;
+    }
+    
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0;
+    }
+    
+    .summary-item {
+        padding: 20px;
+        border-right: 1px solid #e2e8f0;
+        border-bottom: 1px solid #e2e8f0;
+        text-align: center;
+    }
+    
+    .summary-item:nth-child(4n) {
+        border-right: none;
+    }
+    
+    .summary-item:nth-last-child(-n+4) {
+        border-bottom: none;
+    }
+    
+    .summary-label {
+        display: block;
+        font-size: 12px;
+        font-weight: 600;
+        color: #718096;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 8px;
+    }
+    
+    .summary-value {
+        display: block;
+        font-size: 24px;
+        font-weight: 700;
+        color: #2d3748;
+    }
+    
+    .summary-value.positive {
+        color: #38a169;
+    }
+    
+    .pagination-wrapper {
+        background: white;
+        padding: 15px 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .pagination {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+    
+    .pagination a,
+    .pagination span {
+        padding: 8px 16px;
+        background: #f7fafc;
+        border-radius: 6px;
+        text-decoration: none;
+        color: #667eea;
+        font-weight: 600;
+        transition: all 0.2s;
+        border: 2px solid transparent;
+    }
+    
+    .pagination a:hover {
+        background: #667eea;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+    }
+    
+    .pagination .active {
+        background: #667eea;
+        color: white;
+        border: 2px solid #5568d3;
+    }
+    
+    .pagination .disabled {
+        opacity: 0.4;
+        pointer-events: none;
+        background: #f7fafc;
+        color: #a0aec0;
+    }
+    
+    .asins-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .asins-table thead {
+        background: #667eea;
+        color: white;
+    }
+    
+    .asins-table th {
+        padding: 15px;
+        text-align: left;
+        font-weight: 600;
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .asins-table td {
+        padding: 15px;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    
+    .asins-table tbody tr {
+        transition: background-color 0.2s;
+    }
+    
+    .asins-table tbody tr:hover {
+        background: #f7fafc;
+    }
+    
+    .asins-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+    
+    .asin-link {
+        color: #667eea;
+        text-decoration: none;
+        font-weight: 500;
+        font-family: monospace;
+        font-size: 14px;
+    }
+    
+    .asin-link:hover {
+        text-decoration: underline;
+    }
+    
+    .revenue {
+        font-weight: 600;
+        color: #667eea;
+    }
+    
+    .positive {
+        color: #38a169;
+        font-weight: 600;
+    }
+    
+    .negative {
+        color: #e53e3e;
+        font-weight: 600;
+    }
+    
+    .product-name {
+        color: #2d3748;
+        max-width: 300px;
+    }
+    
+    .brand-name {
+        color: #667eea;
+        font-weight: 500;
+        max-width: 150px;
+    }
+    
+    .no-name {
+        color: #a0aec0;
+        font-style: italic;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #718096;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .empty-state h3 {
+        font-size: 1.5rem;
+        margin-bottom: 10px;
+        color: #4a5568;
+    }
+    
+    .empty-state p {
+        font-size: 16px;
+        margin-top: 10px;
+        color: #718096;
+    }
+    
+    .product-image {
+        width: 80px;
+        height: auto;
+        border-radius: 4px;
+        border: 1px solid #e2e8f0;
+    }
+    
+    .no-image {
+        width: 80px;
+        height: 80px;
+        background: #f7fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #a0aec0;
+        font-size: 10px;
+    }
+    
+    .amazon-category {
+        font-size: 11px;
+        color: #718096;
+        margin-top: 5px;
+        font-style: italic;
+    }
+    
+    .scrape-btn {
+        background: #667eea;
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+    
+    .scrape-btn:hover {
+        background: #5568d3;
+        transform: translateY(-2px);
+    }
+    
+    .scrape-btn:disabled {
+        background: #a0aec0;
+        cursor: not-allowed;
+        opacity: 0.5;
+    }
+    
+    .scraped-badge {
+        background: #48bb78;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 500;
+    }
+    
+    .not-scraped {
+        color: #a0aec0;
+        font-style: italic;
+        font-size: 12px;
+    }
+{% endblock %}
+
+{% block content %}
+    <div class="filter-section">
+        <form method="GET" action="{{ url_for('top_asins') }}">
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label for="brand_id">Filter by Brand</label>
+                    <select name="brand_id" id="brand_id" onchange="this.form.submit()">
+                        <option value="">All Brands</option>
+                        {% for brand in brands %}
+                        <option value="{{ brand.id }}" {% if brand_id == brand.id %}selected{% endif %}>
+                            {{ brand.brand }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="bucket_id">Filter by ASIN Bucket</label>
+                    <select name="bucket_id" id="bucket_id" onchange="this.form.submit()">
+                        <option value="">All ASIN Buckets</option>
+                        {% for bucket in top_asin_buckets %}
+                        <option value="{{ bucket.id }}" {% if bucket_id == bucket.id %}selected{% endif %}>
+                            {{ bucket.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="brand_bucket_id">Filter by Brand Bucket</label>
+                    <select name="brand_bucket_id" id="brand_bucket_id" onchange="this.form.submit()">
+                        <option value="">All Brand Buckets</option>
+                        {% for bucket in brand_buckets %}
+                        <option value="{{ bucket.id }}" {% if brand_bucket_id == bucket.id %}selected{% endif %}>
+                            {{ bucket.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="bucket_filter">Bucket Combination</label>
+                    <select name="bucket_filter" id="bucket_filter" onchange="this.form.submit()">
+                        <option value="all" {% if bucket_filter == 'all' %}selected{% endif %}>All ASINs</option>
+                        <option value="has_asin_bucket" {% if bucket_filter == 'has_asin_bucket' %}selected{% endif %}>Has ASIN Bucket</option>
+                        <option value="has_brand_bucket" {% if bucket_filter == 'has_brand_bucket' %}selected{% endif %}>Has Brand Bucket</option>
+                        <option value="has_both" {% if bucket_filter == 'has_both' %}selected{% endif %}>Has Both Buckets</option>
+                        <option value="no_asin_bucket" {% if bucket_filter == 'no_asin_bucket' %}selected{% endif %}>No ASIN Bucket</option>
+                        <option value="no_brand_bucket" {% if bucket_filter == 'no_brand_bucket' %}selected{% endif %}>No Brand Bucket</option>
+                        <option value="both_none" {% if bucket_filter == 'both_none' %}selected{% endif %}>No Buckets</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="search">Search by Title/Name/ASIN</label>
+                    <input type="text" 
+                           name="search" 
+                           id="search" 
+                           value="{{ search_term }}" 
+                           placeholder="Enter search term...">
+                </div>
+                
+                <div class="filter-group">
+                    <label>&nbsp;</label>
+                    <div class="checkbox-filter">
+                        <input type="checkbox" 
+                               name="hide_eol" 
+                               id="hide_eol" 
+                               value="1" 
+                               {% if hide_eol %}checked{% endif %}
+                               onchange="this.form.submit()">
+                        <label for="hide_eol">Hide EOL</label>
+                    </div>
+                </div>
+                
+                <div class="filter-group">
+                    <label>&nbsp;</label>
+                    <button type="submit" class="filter-btn">Search</button>
+                </div>
+            </div>
+        </form>
+    </div>
+    
+    {% if asins %}
+    <!-- Bulk Actions Bar -->
+    <div class="bulk-actions">
+        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+            <input type="checkbox" id="selectAll" class="asin-checkbox" onchange="toggleSelectAll()">
+            <span>Select All</span>
+        </label>
+        <span class="selection-count"><span id="selectedCount">0</span> selected</span>
+        <button class="bulk-actions-btn" id="allocateBucketBtn" onclick="openBucketModal()" disabled>
+            Allocate to Top ASIN Bucket
+        </button>
+    </div>
+    
+    <div class="stats-summary">
+        <div class="summary-header">
+            📦 Summary Statistics - {{ total_count }} ASIN{{ 's' if total_count != 1 else '' }} (Page {{ page }} of {{ total_pages }})
+        </div>
+        <div class="summary-grid">
+            <div class="summary-item">
+                <span class="summary-label">Total LTM Revenue</span>
+                <span class="summary-value">${{ "{:,.0f}".format(total_revenue) }}</span>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">Units Sold (LTM)</span>
+                <span class="summary-value">{{ "{:,.0f}".format(total_units) }}</span>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">LTM EBITDA%</span>
+                <span class="summary-value {% if avg_ebitda > 0 %}positive{% endif %}">{{ "{:.1f}".format(avg_ebitda) }}%</span>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">Total LTM CM3</span>
+                <span class="summary-value">${{ "{:,.0f}".format(total_cm3) }}</span>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">Total Stock Value</span>
+                <span class="summary-value">${{ "{:,.0f}".format(total_stock) }}</span>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">Total Overstock Value</span>
+                <span class="summary-value">${{ "{:,.0f}".format(total_overstock) }}</span>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">Units in Stock</span>
+                <span class="summary-value">{{ "{:,.0f}".format(total_stock_units) }}</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="pagination-wrapper">
+        <div class="pagination">
+            {% if page > 1 %}
+            <a href="{{ url_for('top_asins', brand_id=brand_id, bucket_id=bucket_id, brand_bucket_id=brand_bucket_id, bucket_filter=bucket_filter, search=search_term, hide_eol=hide_eol, page=1, page_size=page_size) }}">⏮️ First</a>
+            <a href="{{ url_for('top_asins', brand_id=brand_id, bucket_id=bucket_id, brand_bucket_id=brand_bucket_id, bucket_filter=bucket_filter, search=search_term, hide_eol=hide_eol, page=page-1, page_size=page_size) }}">◀️ Prev</a>
+            {% else %}
+            <span class="disabled">⏮️ First</span>
+            <span class="disabled">◀️ Prev</span>
+            {% endif %}
+            
+            <span class="active">{{ page }}</span>
+            
+            {% if page < total_pages %}
+            <a href="{{ url_for('top_asins', brand_id=brand_id, bucket_id=bucket_id, brand_bucket_id=brand_bucket_id, bucket_filter=bucket_filter, search=search_term, hide_eol=hide_eol, page=page+1, page_size=page_size) }}">Next ▶️</a>
+            <a href="{{ url_for('top_asins', brand_id=brand_id, bucket_id=bucket_id, brand_bucket_id=brand_bucket_id, bucket_filter=bucket_filter, search=search_term, hide_eol=hide_eol, page=total_pages, page_size=page_size) }}">Last ⏭️</a>
+            {% else %}
+            <span class="disabled">Next ▶️</span>
+            <span class="disabled">Last ⏭️</span>
+            {% endif %}
+        </div>
+    </div>
+    
+    <table class="asins-table">
+        <thead>
+            <tr>
+                <th style="width: 40px;">
+                    <input type="checkbox" class="asin-checkbox" disabled style="visibility: hidden;">
+                </th>
+                <th>Image</th>
+                <th>ASIN</th>
+                <th>Brand</th>
+                <th>Product Name</th>
+                <th>Reviews<br>Rating<br>Price</th>
+                <th>LTM Revenue<br>LTM EBITDA %</th>
+                <th>Stock<br><span style="color: #e53e3e;">Overstock</span></th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for asin in asins %}
+            <tr id="row-{{ asin.asin }}">
+                <td>
+                    <input type="checkbox" class="asin-checkbox asin-select" data-asin-id="{{ asin.id }}" onchange="updateSelection()">
+                </td>
+                <td>
+                    {% if asin.main_image %}
+                        <img src="{{ asin.main_image }}" alt="{{ asin.title or asin.name }}" class="product-image">
+                    {% else %}
+                        <div class="no-image">No image</div>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="https://www.amazon.com/dp/{{ asin.asin }}" target="_blank" class="asin-link">
+                        {{ asin.asin }}
+                    </a>
+                    {% if asin.bucket_names %}
+                    <div style="margin-top: 5px;">
+                        {% set bucket_name_list = asin.bucket_names.split(', ') %}
+                        {% set bucket_color_list = asin.bucket_colors.split(',') %}
+                        {% for bucket_name in bucket_name_list %}
+                        <span class="bucket-badge" style="background-color: {{ bucket_color_list[loop.index0] if loop.index0 < bucket_color_list|length else '#667eea' }}">
+                            {{ bucket_name }}
+                        </span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </td>
+                <td class="brand-name">
+                    {% if asin.brand %}
+                        <a href="{{ url_for('brand_asins', brand_id=asin.brand_id) }}" style="color: #667eea; text-decoration: none;">
+                            {{ asin.brand }}
+                        </a>
+                        {% if asin.brand_bucket_name %}
+                            <br style="margin-bottom: 5px;">
+                            <span class="badge badge-bucket" style="background-color: {{ asin.brand_bucket_color }};">{{ asin.brand_bucket_name }}</span>
+                        {% endif %}
+                    {% else %}
+                        <span class="no-name">No brand</span>
+                    {% endif %}
+                </td>
+                <td class="product-name">
+                    <div>
+                        {% if asin.title %}
+                            {{ asin.title[:80] }}{% if asin.title|length > 80 %}...{% endif %}
+                        {% elif asin.name %}
+                            {{ asin.name }}
+                        {% else %}
+                            <span class="no-name">No name available</span>
+                        {% endif %}
+                    </div>
+                    {% if asin.amazon_category %}
+                    <div class="amazon-category">{{ asin.amazon_category }}</div>
+                    {% endif %}
+                </td>
+                <td id="price-{{ asin.asin }}">
+                    <div>
+                        {% if asin.rating_count %}
+                            {{ "{:,}".format(asin.rating_count) }} reviews
+                        {% else %}
+                            <span class="not-scraped">-</span>
+                        {% endif %}
+                    </div>
+                    <div style="margin-top: 4px;">
+                        {% if asin.rating %}
+                            {{ "{:.1f}".format(asin.rating) }} ⭐
+                        {% else %}
+                            <span class="not-scraped">-</span>
+                        {% endif %}
+                    </div>
+                    <div style="margin-top: 4px; font-weight: 600;">
+                        {% if asin.price %}
+                            ${{ "{:.2f}".format(asin.price) }}
+                        {% else %}
+                            <span class="not-scraped">-</span>
+                        {% endif %}
+                    </div>
+                </td>
+                <td>
+                    <div class="revenue" style="font-weight: 600; color: #667eea;">
+                        {% if asin.ltm_revenues %}
+                            ${{ "{:,.0f}".format(asin.ltm_revenues) }}
+                        {% else %}
+                            <span class="not-scraped">$0</span>
+                        {% endif %}
+                    </div>
+                    <div style="margin-top: 5px; font-weight: 600;" class="{% if asin.ltm_brand_ebitda and asin.ltm_brand_ebitda > 0 %}positive{% elif asin.ltm_brand_ebitda and asin.ltm_brand_ebitda < 0 %}negative{% endif %}">
+                        {% if asin.ltm_brand_ebitda %}
+                            {{ "{:.1f}".format(asin.ltm_brand_ebitda) }}%
+                        {% else %}
+                            <span class="not-scraped">-</span>
+                        {% endif %}
+                    </div>
+                </td>
+                <td>
+                    <div style="font-weight: 600; color: #4299e1;">
+                        {% if asin.stock_value %}
+                            ${{ "{:,.0f}".format(asin.stock_value) }}
+                        {% else %}
+                            <span class="not-scraped">$0</span>
+                        {% endif %}
+                    </div>
+                    <div style="margin-top: 5px; font-size: 13px; color: #e53e3e; font-weight: 600;">
+                        {% if asin.stock_overstock_value %}
+                            ${{ "{:,.0f}".format(asin.stock_overstock_value) }}
+                        {% else %}
+                            <span class="not-scraped">$0</span>
+                        {% endif %}
+                    </div>
+                </td>
+                <td>
+                    <a href="{{ url_for('view_asin', asin_code=asin.asin) }}" class="scrape-btn" style="display: inline-block; text-decoration: none; margin-bottom: 5px;">
+                        View Details
+                    </a>
+                    <button class="scrape-btn" onclick="scrapeAsin('{{ asin.asin }}')" style="display: block; margin-top: 5px;">
+                        Scrape ASIN
+                    </button>
+                    {% if asin.scraped_at %}
+                    <div style="margin-top: 5px;">
+                        <span class="scraped-badge">Scraped</span>
+                    </div>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    <!-- Bottom Pagination -->
+    <div style="margin-top: 20px;">
+        <div class="pagination-wrapper">
+            <div class="pagination">
+                {% if page > 1 %}
+                <a href="{{ url_for('top_asins', brand_id=brand_id, bucket_id=bucket_id, brand_bucket_id=brand_bucket_id, bucket_filter=bucket_filter, search=search_term, hide_eol=hide_eol, page=1, page_size=page_size) }}">⏮️ First</a>
+                <a href="{{ url_for('top_asins', brand_id=brand_id, bucket_id=bucket_id, brand_bucket_id=brand_bucket_id, bucket_filter=bucket_filter, search=search_term, hide_eol=hide_eol, page=page-1, page_size=page_size) }}">◀️ Prev</a>
+                {% else %}
+                <span class="disabled">⏮️ First</span>
+                <span class="disabled">◀️ Prev</span>
+                {% endif %}
+                
+                <span class="active">Page {{ page }} of {{ total_pages }}</span>
+                
+                {% if page < total_pages %}
+                <a href="{{ url_for('top_asins', brand_id=brand_id, bucket_id=bucket_id, brand_bucket_id=brand_bucket_id, bucket_filter=bucket_filter, search=search_term, hide_eol=hide_eol, page=page+1, page_size=page_size) }}">Next ▶️</a>
+                <a href="{{ url_for('top_asins', brand_id=brand_id, bucket_id=bucket_id, brand_bucket_id=brand_bucket_id, bucket_filter=bucket_filter, search=search_term, hide_eol=hide_eol, page=total_pages, page_size=page_size) }}">Last ⏭️</a>
+                {% else %}
+                <span class="disabled">Next ▶️</span>
+                <span class="disabled">Last ⏭️</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    {% else %}
+    <div class="empty-state">
+        <h3>No ASINs found</h3>
+        <p>{% if search_term %}Try adjusting your search term "{{ search_term }}" or filters.{% else %}Try adjusting your filters to see ASINs.{% endif %}</p>
+    </div>
+    {% endif %}
+    
+    <!-- Bucket Allocation Modal -->
+    <div id="bucketModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Allocate to Top ASIN Bucket</h2>
+                <span class="close" onclick="closeBucketModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="bucketSelect">Select Existing Bucket</label>
+                    <select id="bucketSelect" onchange="toggleCreateBucketSection()">
+                        <option value="">-- Select a bucket --</option>
+                        {% for bucket in top_asin_buckets %}
+                        <option value="{{ bucket.id }}">{{ bucket.name }}</option>
+                        {% endfor %}
+                        <option value="create_new">+ Create New Bucket</option>
+                    </select>
+                </div>
+                
+                <!-- Create New Bucket Section (Hidden by default) -->
+                <div id="createBucketSection" class="create-bucket-section">
+                    <h3 style="color: #2d3748; margin-bottom: 15px; font-size: 1.1rem;">Create New Bucket</h3>
+                    <div class="form-group">
+                        <label for="newBucketName">Bucket Name *</label>
+                        <input type="text" id="newBucketName" placeholder="Enter bucket name">
+                    </div>
+                    <div class="form-group">
+                        <label for="newBucketDescription">Description (Optional)</label>
+                        <input type="text" id="newBucketDescription" placeholder="Enter description">
+                    </div>
+                    <div class="form-group">
+                        <label for="newBucketColor">Color</label>
+                        <input type="color" id="newBucketColor" value="#667eea">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn modal-btn-secondary" onclick="closeBucketModal()">Cancel</button>
+                <button class="modal-btn modal-btn-primary" onclick="allocateToBucket()">Allocate ASINs</button>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        // Selection management
+        function updateSelection() {
+            const checkboxes = document.querySelectorAll('.asin-select:checked');
+            const count = checkboxes.length;
+            document.getElementById('selectedCount').textContent = count;
+            document.getElementById('allocateBucketBtn').disabled = count === 0;
+            
+            // Update select all checkbox state
+            const allCheckboxes = document.querySelectorAll('.asin-select');
+            const selectAllCheckbox = document.getElementById('selectAll');
+            selectAllCheckbox.checked = count === allCheckboxes.length && count > 0;
+        }
+        
+        function toggleSelectAll() {
+            const selectAll = document.getElementById('selectAll');
+            const checkboxes = document.querySelectorAll('.asin-select');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = selectAll.checked;
+            });
+            updateSelection();
+        }
+        
+        // Modal management
+        function openBucketModal() {
+            document.getElementById('bucketModal').classList.add('show');
+        }
+        
+        function closeBucketModal() {
+            document.getElementById('bucketModal').classList.remove('show');
+            document.getElementById('bucketSelect').value = '';
+            document.getElementById('createBucketSection').classList.remove('show');
+            document.getElementById('newBucketName').value = '';
+            document.getElementById('newBucketDescription').value = '';
+            document.getElementById('newBucketColor').value = '#667eea';
+        }
+        
+        function toggleCreateBucketSection() {
+            const select = document.getElementById('bucketSelect');
+            const section = document.getElementById('createBucketSection');
+            
+            if (select.value === 'create_new') {
+                section.classList.add('show');
+            } else {
+                section.classList.remove('show');
+            }
+        }
+        
+        // Allocate ASINs to bucket
+        async function allocateToBucket() {
+            const bucketSelect = document.getElementById('bucketSelect');
+            let bucketId = bucketSelect.value;
+            
+            // If creating new bucket
+            if (bucketSelect.value === 'create_new') {
+                const name = document.getElementById('newBucketName').value.trim();
+                if (!name) {
+                    alert('Please enter a bucket name');
+                    return;
+                }
+                
+                const description = document.getElementById('newBucketDescription').value.trim();
+                const color = document.getElementById('newBucketColor').value;
+                
+                // Create new bucket
+                try {
+                    const response = await fetch('/api/top-asin-buckets/create', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ name, description, color })
+                    });
+                    
+                    const data = await response.json();
+                    if (!data.success) {
+                        alert('Error creating bucket: ' + (data.error || 'Unknown error'));
+                        return;
+                    }
+                    
+                    bucketId = data.bucket_id;
+                } catch (error) {
+                    alert('Error creating bucket: ' + error.message);
+                    return;
+                }
+            } else if (!bucketId) {
+                alert('Please select a bucket');
+                return;
+            }
+            
+            // Get selected ASIN IDs
+            const checkboxes = document.querySelectorAll('.asin-select:checked');
+            const asinIds = Array.from(checkboxes).map(cb => parseInt(cb.dataset.asinId));
+            
+            if (asinIds.length === 0) {
+                alert('No ASINs selected');
+                return;
+            }
+            
+            // Allocate ASINs to bucket
+            try {
+                const response = await fetch('/api/top-asins/allocate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ asin_ids: asinIds, bucket_id: bucketId })
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    alert(data.message);
+                    location.reload();
+                } else {
+                    alert('Error allocating ASINs: ' + (data.error || 'Unknown error'));
+                }
+            } catch (error) {
+                alert('Error allocating ASINs: ' + error.message);
+            }
+        }
+        
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('bucketModal');
+            if (event.target === modal) {
+                closeBucketModal();
+            }
+        }
+        
+        function scrapeAsin(asin) {
+            const btn = event.target;
+            const originalText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = 'Scraping...';
+            
+            fetch(`/api/scrape-and-save/${asin}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Refresh the page to show updated data
+                        location.reload();
+                    } else {
+                        alert('Error scraping ASIN: ' + (data.error || 'Unknown error'));
+                        btn.disabled = false;
+                        btn.textContent = originalText;
+                    }
+                })
+                .catch(error => {
+                    alert('Request failed: ' + error.message);
+                    btn.disabled = false;
+                    btn.textContent = originalText;
+                });
+        }
+    </script>
+{% endblock %}
+

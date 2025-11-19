@@ -1,0 +1,442 @@
+{% extends "base.html" %}
+
+{% block title %}Profitability Analysis - LEGO Apps{% endblock %}
+
+{% block page_title %}💰 Profitability Analysis{% endblock %}
+
+{% block extra_styles %}
+    .filters {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+        margin-bottom: 20px;
+        padding: 20px;
+        background: #f7fafc;
+        border-radius: 8px;
+    }
+    
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .filter-group label {
+        font-weight: 600;
+        color: #4a5568;
+        margin-bottom: 5px;
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .filter-group select {
+        padding: 10px;
+        border: 2px solid #e2e8f0;
+        border-radius: 6px;
+        font-size: 1rem;
+        background: white;
+        cursor: pointer;
+        transition: border-color 0.2s;
+    }
+    
+    .filter-group select:focus {
+        outline: none;
+        border-color: #667eea;
+    }
+    
+    .filter-group select:disabled {
+        background: #f7fafc;
+        cursor: not-allowed;
+        opacity: 0.6;
+    }
+    
+    .load-button-container {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 30px;
+    }
+    
+    .btn-load {
+        padding: 12px 40px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+    
+    .btn-load:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+    
+    .btn-load:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #718096;
+    }
+    
+    .empty-state h3 {
+        font-size: 1.5rem;
+        margin-bottom: 10px;
+        color: #4a5568;
+    }
+    
+    .table-container {
+        overflow-x: auto;
+        margin-top: 30px;
+        display: none;
+    }
+    
+    .table-container.visible {
+        display: block;
+    }
+    
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.9rem;
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    th, td {
+        padding: 12px;
+        text-align: right;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    
+    th {
+        background: #667eea;
+        color: white;
+        font-weight: 600;
+        position: sticky;
+        top: 0;
+    }
+    
+    th:first-child, td:first-child {
+        text-align: left;
+        font-weight: 600;
+    }
+    
+    tr:hover {
+        background: #f7fafc;
+    }
+    
+    .positive {
+        color: #38a169;
+    }
+    
+    .negative {
+        color: #e53e3e;
+    }
+    
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+    }
+    
+    .loading-overlay.show {
+        display: flex;
+    }
+    
+    .loading-popup {
+        background: white;
+        padding: 40px;
+        border-radius: 12px;
+        text-align: center;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    }
+    
+    .loading-spinner {
+        width: 50px;
+        height: 50px;
+        border: 5px solid #e2e8f0;
+        border-top: 5px solid #667eea;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 20px;
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    
+    .loading-text {
+        color: #2d3748;
+        font-size: 1.2rem;
+        font-weight: 600;
+    }
+    
+    .info-text {
+        text-align: center;
+        color: #718096;
+        font-size: 0.875rem;
+        margin-bottom: 20px;
+    }
+{% endblock %}
+
+{% block content %}
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-popup">
+            <div class="loading-spinner"></div>
+            <div class="loading-text">Loading profitability data...</div>
+        </div>
+    </div>
+    
+    <div class="info-text">
+        Select either a brand OR a category to analyze profitability
+    </div>
+    
+    <div class="filters">
+        <div class="filter-group">
+            <label for="brand">Select Brand</label>
+            <select id="brand" onchange="onBrandChange()">
+                <option value="">Select a brand...</option>
+                {% for brand in brands %}
+                <option value="{{ brand[0] }}">{{ brand[1] }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="filter-group">
+            <label for="category">Select Category</label>
+            <select id="category" onchange="onCategoryChange()">
+                <option value="">Select a category...</option>
+                {% for category in categories %}
+                <option value="{{ category[0] }}">{{ category[1] }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+    
+    <div class="load-button-container">
+        <button class="btn-load" id="loadBtn" onclick="loadData()" disabled>📊 Load Profitability Data</button>
+    </div>
+    
+    <div id="emptyState" class="empty-state">
+        <h3>💰 Ready to Analyze</h3>
+        <p>Select a brand or category above and click "Load Profitability Data"</p>
+    </div>
+    
+    <div class="table-container" id="tableContainer">
+        <h3 style="margin-bottom: 15px; color: #2d3748;">Monthly Profitability Analysis: 2024 vs 2025</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Month</th>
+                    <th>Revenue 2024</th>
+                    <th>Revenue 2025</th>
+                    <th>YoY Growth %</th>
+                    <th>Brand EBITDA 2024 %</th>
+                    <th>Brand EBITDA 2025 %</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+            </tbody>
+        </table>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        function formatCurrency(value) {
+            return '$' + value.toLocaleString('en-US', { 
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            });
+        }
+        
+        function formatPercentage(value) {
+            return value.toFixed(1) + '%';
+        }
+        
+        function onBrandChange() {
+            const brandSelect = document.getElementById('brand');
+            const categorySelect = document.getElementById('category');
+            const loadBtn = document.getElementById('loadBtn');
+            
+            if (brandSelect.value) {
+                categorySelect.value = '';
+                categorySelect.disabled = true;
+                loadBtn.disabled = false;
+                console.log('Brand selected:', brandSelect.value);
+            } else {
+                categorySelect.disabled = false;
+                loadBtn.disabled = !categorySelect.value;
+            }
+        }
+        
+        function onCategoryChange() {
+            const brandSelect = document.getElementById('brand');
+            const categorySelect = document.getElementById('category');
+            const loadBtn = document.getElementById('loadBtn');
+            
+            if (categorySelect.value) {
+                brandSelect.value = '';
+                brandSelect.disabled = true;
+                loadBtn.disabled = false;
+                console.log('Category selected:', categorySelect.value);
+            } else {
+                brandSelect.disabled = false;
+                loadBtn.disabled = !brandSelect.value;
+            }
+        }
+        
+        function loadData() {
+            const brandId = document.getElementById('brand').value;
+            const categoryId = document.getElementById('category').value;
+            
+            if (!brandId && !categoryId) {
+                alert('Please select either a brand or a category');
+                return;
+            }
+            
+            console.log('=== Profitability Data Loading Started ===');
+            console.log('Brand ID:', brandId || 'None');
+            console.log('Category ID:', categoryId || 'None');
+            
+            // Show loading overlay
+            document.getElementById('loadingOverlay').classList.add('show');
+            
+            // Hide empty state
+            document.getElementById('emptyState').style.display = 'none';
+            
+            // Build query string
+            let params = new URLSearchParams();
+            if (brandId) params.append('brand_id', brandId);
+            if (categoryId) params.append('category_id', categoryId);
+            
+            const apiUrl = '/api/profitability-data?' + params.toString();
+            console.log('API URL:', apiUrl);
+            console.log('Fetching data...');
+            
+            const startTime = Date.now();
+            
+            // Fetch data from API
+            fetch(apiUrl)
+                .then(response => {
+                    console.log('Response received. Status:', response.status);
+                    return response.json();
+                })
+                .then(data => {
+                    const loadTime = Date.now() - startTime;
+                    console.log('Data loaded successfully in', loadTime, 'ms');
+                    console.log('Rows received:', data.data.length);
+                    
+                    // Show table
+                    document.getElementById('tableContainer').classList.add('visible');
+                    
+                    // Update table
+                    updateTable(data.data);
+                    
+                    console.log('Table updated');
+                    console.log('=== Profitability Data Loading Complete ===');
+                })
+                .catch(error => {
+                    console.error('!!! Error loading data !!!');
+                    console.error('Error details:', error);
+                    alert('Error loading data. Please try again.\n\nError: ' + error.message);
+                })
+                .finally(() => {
+                    // Hide loading overlay
+                    document.getElementById('loadingOverlay').classList.remove('show');
+                });
+        }
+        
+        function updateTable(data) {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+            
+            let totalRevenue2024_JanOct = 0;
+            let totalRevenue2025_JanOct = 0;
+            let weightedEBITDA2024_JanOct = 0;
+            let weightedEBITDA2025_JanOct = 0;
+            
+            for (let i = 0; i < data.length; i++) {
+                const row = data[i];
+                
+                // For totals, only include Jan-Oct (first 10 months)
+                if (i < 10) {
+                    totalRevenue2024_JanOct += row.revenue_2024;
+                    totalRevenue2025_JanOct += row.revenue_2025;
+                    
+                    // For weighted EBITDA calculation
+                    if (row.revenue_2024 > 0) {
+                        weightedEBITDA2024_JanOct += (row.ebitda_2024 * row.revenue_2024);
+                    }
+                    if (row.revenue_2025 > 0) {
+                        weightedEBITDA2025_JanOct += (row.ebitda_2025 * row.revenue_2025);
+                    }
+                }
+                
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${row.month}</td>
+                    <td>${formatCurrency(row.revenue_2024)}</td>
+                    <td>${row.revenue_2025 > 0 ? formatCurrency(row.revenue_2025) : '-'}</td>
+                    <td class="${row.yoy_growth >= 0 ? 'positive' : 'negative'}">
+                        ${row.revenue_2025 > 0 ? formatPercentage(row.yoy_growth) : '-'}
+                    </td>
+                    <td class="${row.ebitda_2024 >= 0 ? 'positive' : 'negative'}">
+                        ${row.revenue_2024 > 0 ? formatPercentage(row.ebitda_2024) : '-'}
+                    </td>
+                    <td class="${row.ebitda_2025 >= 0 ? 'positive' : 'negative'}">
+                        ${row.revenue_2025 > 0 ? formatPercentage(row.ebitda_2025) : '-'}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            }
+            
+            // Add totals row (Jan-Oct comparison)
+            const totalYoYGrowth = totalRevenue2024_JanOct > 0 
+                ? ((totalRevenue2025_JanOct - totalRevenue2024_JanOct) / totalRevenue2024_JanOct * 100) 
+                : 0;
+            
+            const avgEBITDA2024 = totalRevenue2024_JanOct > 0 ? (weightedEBITDA2024_JanOct / totalRevenue2024_JanOct) : 0;
+            const avgEBITDA2025 = totalRevenue2025_JanOct > 0 ? (weightedEBITDA2025_JanOct / totalRevenue2025_JanOct) : 0;
+            
+            const totalsRow = document.createElement('tr');
+            totalsRow.style.fontWeight = 'bold';
+            totalsRow.style.borderTop = '3px solid #667eea';
+            totalsRow.style.background = '#f7fafc';
+            totalsRow.innerHTML = `
+                <td style="font-weight: 800;">TOTAL (Jan-Oct)</td>
+                <td style="font-weight: 800;">${formatCurrency(totalRevenue2024_JanOct)}</td>
+                <td style="font-weight: 800;">${formatCurrency(totalRevenue2025_JanOct)}</td>
+                <td class="${totalYoYGrowth >= 0 ? 'positive' : 'negative'}" style="font-weight: 800;">
+                    ${formatPercentage(totalYoYGrowth)}
+                </td>
+                <td class="${avgEBITDA2024 >= 0 ? 'positive' : 'negative'}" style="font-weight: 800;">
+                    ${formatPercentage(avgEBITDA2024)}
+                </td>
+                <td class="${avgEBITDA2025 >= 0 ? 'positive' : 'negative'}" style="font-weight: 800;">
+                    ${formatPercentage(avgEBITDA2025)}
+                </td>
+            `;
+            tbody.appendChild(totalsRow);
+        }
+    </script>
+{% endblock %}
+

@@ -1,0 +1,270 @@
+{% extends "base.html" %}
+
+{% block title %}Top ASIN Buckets{% endblock %}
+
+{% block page_title %}🗂️ Top ASIN Buckets{% endblock %}
+
+{% block extra_styles %}
+    .buckets-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: 25px;
+        margin-top: 30px;
+    }
+    
+    .bucket-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        overflow: hidden;
+        transition: all 0.3s;
+        border-top: 5px solid;
+    }
+    
+    .bucket-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    }
+    
+    .bucket-image {
+        width: 100%;
+        height: 250px;
+        object-fit: cover;
+        background: #f7fafc;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .bucket-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        padding: 20px;
+    }
+    
+    .no-image-placeholder {
+        width: 100%;
+        height: 250px;
+        background: #f7fafc;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #a0aec0;
+        font-size: 14px;
+    }
+    
+    .bucket-content {
+        padding: 20px;
+    }
+    
+    .bucket-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+        margin-bottom: 15px;
+    }
+    
+    .bucket-name {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #2d3748;
+        margin: 0 0 5px 0;
+    }
+    
+    .bucket-description {
+        color: #718096;
+        font-size: 0.9rem;
+        margin-bottom: 15px;
+        line-height: 1.5;
+    }
+    
+    .bucket-stats {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+        margin-bottom: 15px;
+    }
+    
+    .stat-item {
+        background: #f7fafc;
+        padding: 12px;
+        border-radius: 8px;
+    }
+    
+    .stat-label {
+        font-size: 0.75rem;
+        color: #718096;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 5px;
+    }
+    
+    .stat-value {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #2d3748;
+    }
+    
+    .stat-value.revenue {
+        color: #667eea;
+    }
+    
+    .view-bucket-btn {
+        display: block;
+        width: 100%;
+        padding: 12px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        text-align: center;
+        text-decoration: none;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+    
+    .view-bucket-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        color: white;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 80px 20px;
+        color: #718096;
+    }
+    
+    .empty-state-icon {
+        font-size: 64px;
+        margin-bottom: 20px;
+    }
+    
+    .empty-state-text {
+        font-size: 1.2rem;
+        margin-bottom: 30px;
+    }
+    
+    .create-bucket-btn {
+        display: inline-block;
+        padding: 12px 30px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        text-decoration: none;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+    
+    .create-bucket-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        color: white;
+    }
+    
+    .summary-stats {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 25px;
+        border-radius: 12px;
+        margin-bottom: 30px;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+    }
+    
+    .summary-stat {
+        text-align: center;
+    }
+    
+    .summary-stat-label {
+        font-size: 0.9rem;
+        opacity: 0.9;
+        margin-bottom: 5px;
+    }
+    
+    .summary-stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+    }
+{% endblock %}
+
+{% block content %}
+    {% if buckets and buckets|length > 0 %}
+    <!-- Summary Statistics -->
+    <div class="summary-stats">
+        <div class="summary-stat">
+            <div class="summary-stat-label">Total Buckets</div>
+            <div class="summary-stat-value">{{ buckets|length }}</div>
+        </div>
+        <div class="summary-stat">
+            <div class="summary-stat-label">Total ASINs</div>
+            <div class="summary-stat-value">{{ buckets|sum(attribute='asin_count')|int }}</div>
+        </div>
+        <div class="summary-stat">
+            <div class="summary-stat-label">Total LTM Revenue</div>
+            <div class="summary-stat-value">${{ "{:,.0f}".format(buckets|map(attribute='total_ltm_revenues')|map('default', 0)|sum) }}</div>
+        </div>
+    </div>
+    
+    <!-- Buckets Grid -->
+    <div class="buckets-grid">
+        {% for bucket in buckets %}
+        <div class="bucket-card" style="border-top-color: {{ bucket.color }}">
+            <div class="bucket-image">
+                {% if bucket.top_asin_image %}
+                    <img src="{{ bucket.top_asin_image }}" alt="{{ bucket.name }}">
+                {% else %}
+                    <div class="no-image-placeholder">
+                        No image available
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="bucket-content">
+                <div class="bucket-header">
+                    <div>
+                        <h2 class="bucket-name">{{ bucket.name }}</h2>
+                        {% if bucket.description %}
+                        <p class="bucket-description">{{ bucket.description }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="bucket-stats">
+                    <div class="stat-item">
+                        <div class="stat-label">ASINs</div>
+                        <div class="stat-value">{{ bucket.asin_count or 0 }}</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">LTM Revenue</div>
+                        <div class="stat-value revenue">
+                            {% if bucket.total_ltm_revenues %}
+                            ${{ "{:,.0f}".format(bucket.total_ltm_revenues) }}
+                            {% else %}
+                            $0
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <a href="{{ url_for('top_asins', bucket_id=bucket.id) }}" class="view-bucket-btn">
+                    View ASINs in Bucket
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    {% else %}
+    <!-- Empty State -->
+    <div class="empty-state">
+        <div class="empty-state-icon">📦</div>
+        <div class="empty-state-text">No top ASIN buckets created yet</div>
+        <a href="{{ url_for('top_asins') }}" class="create-bucket-btn">
+            Go to Top ASINs to Create Buckets
+        </a>
+    </div>
+    {% endif %}
+{% endblock %}
+

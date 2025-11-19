@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Edit' if bucket else 'Add' }} Brand Bucket - LEGO Apps{% endblock %}
+
+{% block page_title %}🗂️ {{ 'Edit' if bucket else 'Add' }} Brand Bucket{% endblock %}
+
+{% block extra_styles %}
+    .form-container {
+        max-width: 600px;
+        margin: 0 auto;
+        background: white;
+        padding: 40px;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .form-group {
+        margin-bottom: 25px;
+    }
+    
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #4a5568;
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .form-group input[type="text"],
+    .form-group textarea {
+        width: 100%;
+        padding: 12px 15px;
+        font-size: 1rem;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        transition: border-color 0.2s;
+        font-family: inherit;
+    }
+    
+    .form-group input[type="text"]:focus,
+    .form-group textarea:focus {
+        outline: none;
+        border-color: #667eea;
+    }
+    
+    .form-group textarea {
+        resize: vertical;
+        min-height: 100px;
+    }
+    
+    .color-input-container {
+        display: flex;
+        gap: 15px;
+        align-items: center;
+    }
+    
+    .form-group input[type="color"] {
+        width: 80px;
+        height: 50px;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        cursor: pointer;
+    }
+    
+    .color-preview {
+        flex: 1;
+        padding: 12px 15px;
+        border-radius: 8px;
+        font-family: monospace;
+        font-size: 1rem;
+        text-align: center;
+        font-weight: 600;
+        color: white;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    }
+    
+    .form-actions {
+        display: flex;
+        gap: 15px;
+        margin-top: 30px;
+    }
+    
+    .btn {
+        padding: 12px 30px;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+        transition: all 0.3s ease;
+        flex: 1;
+        text-align: center;
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+    
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+    
+    .btn-secondary {
+        background: #e2e8f0;
+        color: #4a5568;
+    }
+    
+    .btn-secondary:hover {
+        background: #cbd5e0;
+        transform: translateY(-2px);
+    }
+    
+    .hint {
+        font-size: 0.813rem;
+        color: #718096;
+        margin-top: 5px;
+    }
+{% endblock %}
+
+{% block content %}
+    <div class="form-container">
+        <form method="POST">
+            <div class="form-group">
+                <label for="name">Bucket Name *</label>
+                <input type="text" id="name" name="name" required 
+                       value="{{ bucket.name if bucket else '' }}"
+                       placeholder="e.g., Priority A, New Acquisitions">
+                <div class="hint">Give your bucket a descriptive name</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="color">Color *</label>
+                <div class="color-input-container">
+                    <input type="color" id="color" name="color" 
+                           value="{{ bucket.color if bucket else '#667eea' }}"
+                           onchange="updateColorPreview(this.value)">
+                    <div id="colorPreview" class="color-preview" 
+                         style="background-color: {{ bucket.color if bucket else '#667eea' }};">
+                        {{ bucket.color if bucket else '#667eea' }}
+                    </div>
+                </div>
+                <div class="hint">Choose a color to identify this bucket</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="description">Description</label>
+                <textarea id="description" name="description" 
+                          placeholder="Optional description for this bucket...">{{ bucket.description if bucket else '' }}</textarea>
+                <div class="hint">Add notes about what brands belong in this bucket</div>
+            </div>
+            
+            <div class="form-actions">
+                <a href="{{ url_for('brand_buckets_list') }}" class="btn btn-secondary">
+                    Cancel
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    {{ 'Update' if bucket else 'Create' }} Bucket
+                </button>
+            </div>
+        </form>
+    </div>
+    
+    <script>
+        function updateColorPreview(color) {
+            const preview = document.getElementById('colorPreview');
+            preview.style.backgroundColor = color;
+            preview.textContent = color;
+        }
+    </script>
+{% endblock %}
+

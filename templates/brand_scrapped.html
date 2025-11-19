@@ -1,0 +1,694 @@
+{% extends "base.html" %}
+
+{% block title %}Brand Scrapped Manager{% endblock %}
+
+{% block page_title %}🏷️ Brand Scrapped Manager{% endblock %}
+
+{% block extra_styles %}
+    .filter-section {
+        margin-bottom: 25px;
+        padding: 20px;
+        background: #f7fafc;
+        border-radius: 8px;
+    }
+    
+    .filter-row {
+        display: flex;
+        gap: 15px;
+        align-items: flex-end;
+        margin-bottom: 10px;
+    }
+    
+    .filter-group {
+        flex: 1;
+    }
+    
+    .filter-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 600;
+        color: #4a5568;
+        font-size: 0.875rem;
+    }
+    
+    .filter-group input,
+    .filter-group select {
+        width: 100%;
+        padding: 10px 15px;
+        font-size: 14px;
+        border: 2px solid #e2e8f0;
+        border-radius: 6px;
+        background: white;
+    }
+    
+    .filter-group input:focus,
+    .filter-group select:focus {
+        outline: none;
+        border-color: #667eea;
+    }
+    
+    .filter-section button {
+        padding: 10px 20px;
+        background: #667eea;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .filter-section button:hover {
+        background: #5568d3;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+    }
+    
+    .stats-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-bottom: 25px;
+    }
+    
+    .stat-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 20px;
+        border-radius: 8px;
+        color: white;
+        text-align: center;
+    }
+    
+    .stat-card h3 {
+        font-size: 2rem;
+        margin: 0 0 5px 0;
+        color: white;
+    }
+    
+    .stat-card p {
+        margin: 0;
+        font-size: 0.875rem;
+        opacity: 0.9;
+    }
+    
+    .brands-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+    
+    .brands-table thead {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    
+    .brands-table th {
+        padding: 15px;
+        text-align: left;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.5px;
+    }
+    
+    .brands-table td {
+        padding: 15px;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    
+    .brands-table tbody tr {
+        transition: background-color 0.2s;
+    }
+    
+    .brands-table tbody tr:hover {
+        background-color: #f7fafc;
+    }
+    
+    .brands-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+    
+    .status-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+    
+    .status-mapped {
+        background: #c6f6d5;
+        color: #22543d;
+    }
+    
+    .status-unmapped {
+        background: #fed7d7;
+        color: #742a2a;
+    }
+    
+    .btn-small {
+        padding: 8px 16px;
+        font-size: 13px;
+        border: none;
+        border-radius: 4px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        display: inline-block;
+    }
+    
+    .btn-edit {
+        background: #667eea;
+        color: white;
+    }
+    
+    .btn-edit:hover {
+        background: #5568d3;
+        transform: translateY(-1px);
+    }
+    
+    /* Modal Overlay Styles */
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.6);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+        animation: fadeIn 0.2s ease;
+    }
+    
+    .modal-overlay.active {
+        display: flex;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    
+    .modal-content {
+        background: white;
+        border-radius: 12px;
+        padding: 30px;
+        max-width: 600px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        animation: slideUp 0.3s ease;
+    }
+    
+    @keyframes slideUp {
+        from {
+            transform: translateY(30px);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+    
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #e2e8f0;
+    }
+    
+    .modal-header h2 {
+        margin: 0;
+        color: #2d3748;
+        font-size: 1.5rem;
+    }
+    
+    .modal-close {
+        background: none;
+        border: none;
+        font-size: 28px;
+        color: #718096;
+        cursor: pointer;
+        padding: 0;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
+        transition: all 0.2s;
+    }
+    
+    .modal-close:hover {
+        background: #f7fafc;
+        color: #2d3748;
+    }
+    
+    .modal-section {
+        margin-bottom: 25px;
+    }
+    
+    .modal-section h3 {
+        color: #4a5568;
+        font-size: 1rem;
+        margin-bottom: 15px;
+        font-weight: 600;
+    }
+    
+    .brand-info {
+        background: #f7fafc;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    
+    .brand-info p {
+        margin: 5px 0;
+        color: #4a5568;
+    }
+    
+    .brand-info strong {
+        color: #2d3748;
+    }
+    
+    .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #4a5568;
+        font-size: 0.875rem;
+    }
+    
+    .form-group input,
+    .form-group select {
+        width: 100%;
+        padding: 10px 15px;
+        font-size: 14px;
+        border: 2px solid #e2e8f0;
+        border-radius: 6px;
+        background: white;
+    }
+    
+    .form-group input:focus,
+    .form-group select:focus {
+        outline: none;
+        border-color: #667eea;
+    }
+    
+    .form-divider {
+        display: flex;
+        align-items: center;
+        margin: 25px 0;
+        color: #718096;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+    }
+    
+    .form-divider::before,
+    .form-divider::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background: #e2e8f0;
+    }
+    
+    .form-divider span {
+        padding: 0 15px;
+    }
+    
+    .modal-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        margin-top: 25px;
+        padding-top: 20px;
+        border-top: 2px solid #e2e8f0;
+    }
+    
+    .btn-modal {
+        padding: 12px 24px;
+        font-size: 14px;
+        border: none;
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .btn-primary-modal {
+        background: #667eea;
+        color: white;
+    }
+    
+    .btn-primary-modal:hover {
+        background: #5568d3;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+    }
+    
+    .btn-secondary-modal {
+        background: #48bb78;
+        color: white;
+    }
+    
+    .btn-secondary-modal:hover {
+        background: #38a169;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(72, 187, 120, 0.3);
+    }
+    
+    .btn-cancel-modal {
+        background: #e2e8f0;
+        color: #4a5568;
+    }
+    
+    .btn-cancel-modal:hover {
+        background: #cbd5e0;
+        transform: translateY(-2px);
+    }
+    
+    .asin-count {
+        display: inline-block;
+        background: #edf2f7;
+        color: #4a5568;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.875rem;
+        font-weight: 600;
+    }
+    
+    .brand-name {
+        font-weight: 600;
+        color: #2d3748;
+    }
+    
+    .mapped-brand {
+        color: #667eea;
+        font-weight: 500;
+        font-size: 0.875rem;
+    }
+    
+    .no-results {
+        text-align: center;
+        padding: 40px;
+        color: #718096;
+    }
+    
+    .clear-filter {
+        padding: 10px 20px;
+        background: #718096;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        display: inline-block;
+    }
+    
+    .clear-filter:hover {
+        background: #4a5568;
+        transform: translateY(-2px);
+    }
+{% endblock %}
+
+{% block content %}
+    <div class="stats-cards">
+        <div class="stat-card">
+            <h3>{{ stats.total }}</h3>
+            <p>Total Scrapped Brands</p>
+        </div>
+        <div class="stat-card">
+            <h3>{{ stats.mapped }}</h3>
+            <p>Mapped to Brands</p>
+        </div>
+        <div class="stat-card">
+            <h3>{{ stats.unmapped }}</h3>
+            <p>Not Mapped</p>
+        </div>
+    </div>
+    
+    <div class="filter-section">
+        <form method="GET" action="{{ url_for('brand_scrapped_list') }}">
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label for="search">Search Brand Name</label>
+                    <input type="text" id="search" name="search" value="{{ search_query }}" placeholder="Search...">
+                </div>
+                
+                <div class="filter-group">
+                    <label for="mapping">Mapping Status</label>
+                    <select id="mapping" name="mapping">
+                        <option value="all" {% if mapping_filter == 'all' %}selected{% endif %}>All</option>
+                        <option value="mapped" {% if mapping_filter == 'mapped' %}selected{% endif %}>Mapped</option>
+                        <option value="unmapped" {% if mapping_filter == 'unmapped' %}selected{% endif %}>Unmapped</option>
+                    </select>
+                </div>
+                
+                <button type="submit">Filter</button>
+                {% if search_query or mapping_filter != 'all' %}
+                    <a href="{{ url_for('brand_scrapped_list') }}" class="clear-filter">Clear</a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+    
+    {% if brand_scrapped %}
+        <table class="brands-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Scrapped Brand Name</th>
+                    <th>Mapped Brand</th>
+                    <th>Status</th>
+                    <th>ASINs</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in brand_scrapped %}
+                    <tr>
+                        <td>{{ item.id }}</td>
+                        <td>
+                            <span class="brand-name">{{ item.name }}</span>
+                        </td>
+                        <td>
+                            {% if item.official_brand_name %}
+                                <span class="mapped-brand">{{ item.official_brand_name }}</span>
+                            {% else %}
+                                <span style="color: #cbd5e0;">Not mapped</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if item.brand_id %}
+                                <span class="status-badge status-mapped">Mapped</span>
+                            {% else %}
+                                <span class="status-badge status-unmapped">Unmapped</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="asin-count">{{ item.asin_count }} ASINs</span>
+                        </td>
+                        <td>
+                            <button 
+                                type="button" 
+                                class="btn-small btn-edit"
+                                data-id="{{ item.id }}"
+                                data-name="{{ item.name }}"
+                                data-brand-id="{{ item.brand_id or '' }}"
+                                data-official-name="{{ item.official_brand_name or '' }}"
+                                data-asin-count="{{ item.asin_count }}"
+                                onclick="openEditModal(this)">
+                                Edit Mapping
+                            </button>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="no-results">
+            <p>No brand_scrapped entries found.</p>
+            {% if search_query or mapping_filter != 'all' %}
+                <p><a href="{{ url_for('brand_scrapped_list') }}" class="btn btn-primary" style="margin-top: 15px;">Clear Filters</a></p>
+            {% endif %}
+        </div>
+    {% endif %}
+    
+    <!-- Edit Modal Overlay -->
+    <div id="editModal" class="modal-overlay" onclick="closeModalOnOutsideClick(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h2>Edit Brand Mapping</h2>
+                <button type="button" class="modal-close" onclick="closeEditModal()">&times;</button>
+            </div>
+            
+            <div class="brand-info">
+                <p><strong>Scrapped Brand Name:</strong> <span id="modal-brand-name"></span></p>
+                <p><strong>Current Mapping:</strong> <span id="modal-current-mapping"></span></p>
+                <p><strong>ASINs Count:</strong> <span id="modal-asin-count"></span></p>
+            </div>
+            
+            <!-- Map to Existing Brand Section -->
+            <div class="modal-section">
+                <h3>Map to Existing Brand</h3>
+                <form id="mapBrandForm" method="POST" action="">
+                    <div class="form-group">
+                        <label for="brand_id">Select Brand</label>
+                        <select id="brand_id" name="brand_id" required>
+                            <option value="">Select a brand...</option>
+                            {% for brand in all_brands %}
+                                <option value="{{ brand.id }}">{{ brand.brand }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button type="submit" class="btn-modal btn-primary-modal">Update Mapping</button>
+                </form>
+            </div>
+            
+            <div class="form-divider">
+                <span>OR</span>
+            </div>
+            
+            <!-- Create New Brand Section -->
+            <div class="modal-section">
+                <h3>Create New Brand</h3>
+                <form id="createBrandForm" method="POST" action="">
+                    <div class="form-group">
+                        <label for="new_brand_name">Brand Name</label>
+                        <input type="text" id="new_brand_name" name="new_brand_name" required>
+                        <p style="font-size: 0.75rem; color: #718096; margin-top: 5px;">
+                            Edit the brand name if needed, or keep the scraped name as is
+                        </p>
+                    </div>
+                    <button type="submit" class="btn-modal btn-secondary-modal">Create New Brand</button>
+                </form>
+            </div>
+            
+            <div class="modal-actions">
+                <button type="button" class="btn-modal btn-cancel-modal" onclick="closeEditModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let currentScrappedId = null;
+    
+    function openEditModal(button) {
+        // Get data from button attributes
+        const id = button.getAttribute('data-id');
+        const name = button.getAttribute('data-name');
+        const brandId = button.getAttribute('data-brand-id');
+        const officialBrandName = button.getAttribute('data-official-name');
+        const asinCount = button.getAttribute('data-asin-count');
+        
+        console.log('Opening modal for:', {id, name, brandId, officialBrandName, asinCount}); // Debug log
+        
+        currentScrappedId = id;
+        
+        // Update modal info
+        document.getElementById('modal-brand-name').textContent = name;
+        document.getElementById('modal-current-mapping').textContent = officialBrandName || 'Not mapped';
+        document.getElementById('modal-asin-count').textContent = asinCount + ' ASINs';
+        
+        // Set form actions
+        document.getElementById('mapBrandForm').action = '{{ url_for("update_brand_scrapped", scrapped_id=0) }}'.replace('0', id);
+        document.getElementById('createBrandForm').action = '{{ url_for("create_brand_from_scrapped", scrapped_id=0) }}'.replace('0', id);
+        
+        // Pre-select current brand if mapped
+        const brandSelect = document.getElementById('brand_id');
+        if (brandId && brandId !== '') {
+            brandSelect.value = brandId;
+        } else {
+            brandSelect.value = '';
+        }
+        
+        // Set the brand name in create form
+        document.getElementById('new_brand_name').value = name;
+        
+        // Show modal
+        const modal = document.getElementById('editModal');
+        console.log('Modal element:', modal); // Debug log
+        if (modal) {
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+            console.log('Modal opened successfully'); // Debug log
+        } else {
+            console.error('Modal element not found!'); // Debug log
+        }
+    }
+    
+    function closeEditModal() {
+        const modal = document.getElementById('editModal');
+        if (modal) {
+            modal.classList.remove('active');
+            document.body.style.overflow = 'auto';
+            currentScrappedId = null;
+        }
+    }
+    
+    function closeModalOnOutsideClick(event) {
+        if (event.target.id === 'editModal') {
+            closeEditModal();
+        }
+    }
+    
+    // Close modal on ESC key
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            closeEditModal();
+        }
+    });
+    
+    // Wait for DOM to be ready before adding event listeners
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM loaded, setting up event listeners'); // Debug log
+        
+        // Prevent form submission if no brand selected
+        const mapForm = document.getElementById('mapBrandForm');
+        if (mapForm) {
+            mapForm.addEventListener('submit', function(e) {
+                const brandId = document.getElementById('brand_id').value;
+                if (!brandId) {
+                    e.preventDefault();
+                    alert('Please select a brand to map to.');
+                }
+            });
+        }
+        
+        // Confirm before creating new brand
+        const createForm = document.getElementById('createBrandForm');
+        if (createForm) {
+            createForm.addEventListener('submit', function(e) {
+                const brandName = document.getElementById('new_brand_name').value;
+                if (!confirm('Create new brand "' + brandName + '"?')) {
+                    e.preventDefault();
+                }
+            });
+        }
+        
+        console.log('Event listeners set up successfully'); // Debug log
+    });
+</script>
+{% endblock %}
+

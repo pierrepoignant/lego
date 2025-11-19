@@ -1,0 +1,369 @@
+{% extends "base.html" %}
+
+{% block title %}ASINs - {{ brand.brand }}{% endblock %}
+
+{% block page_title %}📦 Product ASINs{% endblock %}
+
+{% block extra_styles %}
+    .back-link {
+        display: inline-block;
+        margin-bottom: 20px;
+        color: #667eea;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.875rem;
+    }
+    
+    .back-link:hover {
+        text-decoration: underline;
+    }
+    
+    .brand-info {
+        background: #f7fafc;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 25px;
+    }
+    
+    .brand-info h2 {
+        color: #2d3748;
+        font-size: 1.5rem;
+        margin-bottom: 10px;
+    }
+    
+    .brand-info p {
+        color: #4a5568;
+        margin: 5px 0;
+    }
+    
+    .stats {
+        margin-bottom: 20px;
+        padding: 15px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 8px;
+        font-size: 14px;
+        color: white;
+        font-weight: 600;
+    }
+    
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    thead {
+        background: #667eea;
+        color: white;
+    }
+    
+    th, td {
+        padding: 15px;
+        text-align: left;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    
+    th {
+        font-weight: 600;
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    tbody tr {
+        transition: background-color 0.2s;
+    }
+    
+    tbody tr:hover {
+        background: #f7fafc;
+    }
+    
+    .asin-link {
+        color: #667eea;
+        text-decoration: none;
+        font-weight: 500;
+        font-family: monospace;
+        font-size: 14px;
+    }
+    
+    .asin-link:hover {
+        text-decoration: underline;
+    }
+    
+    .revenue {
+        font-weight: 600;
+        color: #667eea;
+    }
+    
+    .positive {
+        color: #38a169;
+        font-weight: 600;
+    }
+    
+    .negative {
+        color: #e53e3e;
+        font-weight: 600;
+    }
+    
+    .product-name {
+        color: #2d3748;
+        max-width: 400px;
+    }
+    
+    .no-name {
+        color: #a0aec0;
+        font-style: italic;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #718096;
+    }
+    
+    .empty-state p {
+        font-size: 18px;
+        margin-top: 15px;
+    }
+    
+    .loading {
+        color: #667eea;
+        font-style: italic;
+    }
+    
+    .error {
+        color: #fc8181;
+        background: #fff5f5;
+        border: 1px solid #feb2b2;
+        padding: 12px;
+        border-radius: 4px;
+        margin: 10px 0;
+    }
+    
+    .scrape-btn {
+        background: #667eea;
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+    
+    .scrape-btn:hover {
+        background: #5568d3;
+        transform: translateY(-2px);
+    }
+    
+    .scrape-btn:disabled {
+        background: #a0aec0;
+        cursor: not-allowed;
+        opacity: 0.5;
+    }
+    
+    .scraped-badge {
+        background: #48bb78;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 500;
+    }
+    
+    .not-scraped {
+        color: #a0aec0;
+        font-style: italic;
+        font-size: 12px;
+    }
+    
+    .product-image {
+        width: 150px;
+        height: auto;
+        border-radius: 4px;
+        border: 1px solid #e2e8f0;
+    }
+    
+    .no-image {
+        width: 150px;
+        height: 150px;
+        background: #f7fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #a0aec0;
+        font-size: 12px;
+    }
+    
+    .amazon-category {
+        font-size: 11px;
+        color: #718096;
+        margin-top: 5px;
+        font-style: italic;
+    }
+{% endblock %}
+
+{% block content %}
+    <a href="{{ url_for('index') }}" class="back-link">← Back to Brand List</a>
+    
+    <div class="brand-info">
+        <h2>{{ brand.brand }}</h2>
+        {% if brand.category %}
+        <p><strong>Category:</strong> {{ brand.category }}</p>
+        {% endif %}
+        {% if brand.url %}
+        <p><strong>Store:</strong> <a href="{{ brand.url }}" target="_blank" style="color: #667eea;">{{ brand.url }}</a></p>
+        {% endif %}
+    </div>
+    
+    {% if asins %}
+    <div class="stats">
+        <strong>Total ASINs:</strong> {{ asins|length }} products
+    </div>
+    
+        <table>
+            <thead>
+                <tr>
+                    <th>Image</th>
+                    <th>ASIN</th>
+                    <th>Product Name</th>
+                    <th>Price</th>
+                    <th>Rating</th>
+                    <th>Reviews</th>
+                    <th>LTM Revenue</th>
+                    <th>LTM EBITDA %</th>
+                    <th>LTM Stock</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+        <tbody>
+            {% for asin in asins %}
+            <tr id="row-{{ asin.asin }}">
+                <td>
+                    {% if asin.main_image %}
+                        <img src="{{ asin.main_image }}" alt="{{ asin.title or asin.name }}" class="product-image">
+                    {% else %}
+                        <div class="no-image">No image</div>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="https://www.amazon.com/dp/{{ asin.asin }}" target="_blank" class="asin-link">
+                        {{ asin.asin }}
+                    </a>
+                </td>
+                <td class="product-name">
+                    <div>
+                        {% if asin.title %}
+                            {{ asin.title[:100] }}{% if asin.title|length > 100 %}...{% endif %}
+                        {% elif asin.name %}
+                            {{ asin.name }}
+                        {% else %}
+                            <span class="no-name">No name available</span>
+                        {% endif %}
+                    </div>
+                    {% if asin.amazon_category %}
+                    <div class="amazon-category">{{ asin.amazon_category }}</div>
+                    {% endif %}
+                </td>
+                <td id="price-{{ asin.asin }}">
+                    {% if asin.price %}
+                        ${{ "{:.2f}".format(asin.price) }}
+                    {% else %}
+                        <span class="not-scraped">-</span>
+                    {% endif %}
+                </td>
+                <td id="rating-{{ asin.asin }}">
+                    {% if asin.rating %}
+                        {{ "{:.1f}".format(asin.rating) }} ⭐
+                    {% else %}
+                        <span class="not-scraped">-</span>
+                    {% endif %}
+                </td>
+                    <td id="rating-count-{{ asin.asin }}">
+                        {% if asin.rating_count %}
+                            {{ "{:,}".format(asin.rating_count) }}
+                        {% else %}
+                            <span class="not-scraped">-</span>
+                        {% endif %}
+                    </td>
+                    <td class="revenue">
+                        {% if asin.ltm_revenues %}
+                            ${{ "{:,.0f}".format(asin.ltm_revenues) }}
+                        {% else %}
+                            <span class="not-scraped">$0</span>
+                        {% endif %}
+                    </td>
+                    <td class="{% if asin.ltm_brand_ebitda and asin.ltm_brand_ebitda > 0 %}positive{% elif asin.ltm_brand_ebitda and asin.ltm_brand_ebitda < 0 %}negative{% endif %}">
+                        {% if asin.ltm_brand_ebitda %}
+                            {{ "{:.1f}".format(asin.ltm_brand_ebitda) }}%
+                        {% else %}
+                            <span class="not-scraped">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if asin.stock_value %}
+                            ${{ "{:,.0f}".format(asin.stock_value) }}
+                        {% else %}
+                            <span class="not-scraped">$0</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                    <a href="{{ url_for('view_asin', asin_code=asin.asin) }}" class="scrape-btn" style="display: inline-block; text-decoration: none; margin-bottom: 5px;">
+                        View Details
+                    </a>
+                    <button class="scrape-btn" onclick="scrapeAsin('{{ asin.asin }}')" style="display: block; margin-top: 5px;">
+                        Scrape ASIN
+                    </button>
+                    {% if asin.scraped_at %}
+                    <div style="margin-top: 5px;">
+                        <span class="scraped-badge">Scraped</span>
+                    </div>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <p>📭</p>
+        <p>No ASINs found for this brand</p>
+    </div>
+    {% endif %}
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        function scrapeAsin(asin) {
+            const btn = event.target;
+            const originalText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = 'Scraping...';
+            
+            fetch(`/api/scrape-and-save/${asin}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Refresh the page to show updated data
+                        location.reload();
+                    } else {
+                        alert('Error scraping ASIN: ' + (data.error || 'Unknown error'));
+                        btn.disabled = false;
+                        btn.textContent = originalText;
+                    }
+                })
+                .catch(error => {
+                    alert('Request failed: ' + error.message);
+                    btn.disabled = false;
+                    btn.textContent = originalText;
+                });
+        }
+    </script>
+{% endblock %}

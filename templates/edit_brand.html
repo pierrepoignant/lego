@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Brand - {{ brand.brand }}{% endblock %}
+
+{% block page_title %}✏️ Edit Brand{% endblock %}
+
+{% block extra_styles %}
+    .back-link {
+        display: inline-block;
+        margin-bottom: 20px;
+        color: #667eea;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.875rem;
+    }
+    
+    .back-link:hover {
+        text-decoration: underline;
+    }
+    
+    .brand-id {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 15px 20px;
+        border-radius: 8px;
+        margin-bottom: 25px;
+        font-weight: 600;
+    }
+    
+    .form-group {
+        margin-bottom: 25px;
+    }
+    
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #2d3748;
+        font-size: 14px;
+    }
+    
+    input[type="text"],
+    input[type="url"],
+    select {
+        width: 100%;
+        padding: 12px 15px;
+        font-size: 14px;
+        border: 2px solid #e2e8f0;
+        border-radius: 6px;
+        background: white;
+        transition: border-color 0.2s;
+    }
+    
+    input[type="text"]:focus,
+    input[type="url"]:focus,
+    select:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    .field-info {
+        font-size: 13px;
+        color: #718096;
+        margin-top: 5px;
+    }
+    
+    .form-actions {
+        display: flex;
+        gap: 15px;
+        margin-top: 30px;
+    }
+    
+    .btn-form {
+        padding: 12px 30px;
+        font-size: 14px;
+        font-weight: 600;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+        transition: all 0.2s;
+    }
+    
+    .btn-save {
+        background: #667eea;
+        color: white;
+    }
+    
+    .btn-save:hover {
+        background: #5568d3;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+    }
+    
+    .btn-cancel {
+        background: #718096;
+        color: white;
+    }
+    
+    .btn-cancel:hover {
+        background: #4a5568;
+        transform: translateY(-2px);
+    }
+{% endblock %}
+
+{% block content %}
+    <a href="{{ url_for('index') }}" class="back-link">← Back to Brand List</a>
+    
+    <div class="brand-id">
+        <strong>Brand ID:</strong> {{ brand.id }}
+    </div>
+    
+    <form method="POST" action="{{ url_for('edit_brand', brand_id=brand.id) }}">
+        <div class="form-group">
+            <label for="brand">Brand Name *</label>
+            <input type="text" id="brand" name="brand" value="{{ brand.brand }}" required>
+            <div class="field-info">The name of the brand</div>
+        </div>
+        
+        <div class="form-group">
+            <label for="url">Store URL</label>
+            <input type="url" id="url" name="url" value="{{ brand.url or '' }}" placeholder="https://...">
+            <div class="field-info">The Amazon store URL for this brand</div>
+        </div>
+        
+        <div class="form-group">
+            <label for="category_id">Category</label>
+            <select id="category_id" name="category_id">
+                <option value="">No Category</option>
+                {% for cat_id, cat_name in categories %}
+                    <option value="{{ cat_id }}" {% if brand.category_id == cat_id %}selected{% endif %}>
+                        {{ cat_name }}
+                    </option>
+                {% endfor %}
+            </select>
+            <div class="field-info">The category this brand belongs to</div>
+        </div>
+        
+        <div class="form-group">
+            <label for="brand_bucket_id">Brand Bucket</label>
+            <select id="brand_bucket_id" name="brand_bucket_id">
+                <option value="">No Bucket</option>
+                {% for bucket in brand_buckets %}
+                    <option value="{{ bucket.id }}" {% if brand.brand_bucket_id == bucket.id %}selected{% endif %}>
+                        {{ bucket.name }}
+                    </option>
+                {% endfor %}
+            </select>
+            <div class="field-info">Assign this brand to a bucket for organization</div>
+        </div>
+        
+        <div class="form-group">
+            <label for="sub_category">Sub-Category</label>
+            <input type="text" id="sub_category" name="sub_category" value="{{ brand.sub_category or '' }}" placeholder="Optional">
+            <div class="field-info">Sub-category classification for this brand</div>
+        </div>
+        
+        <div class="form-group">
+            <label for="group">Group</label>
+            <input type="text" id="group" name="group" value="{{ brand.group or '' }}" placeholder="Optional">
+            <div class="field-info">Optional group identifier (e.g., 'stock' for inventory brands)</div>
+        </div>
+        
+        <div class="form-actions">
+            <button type="submit" class="btn-form btn-save">💾 Save Changes</button>
+            <a href="{{ url_for('index') }}" class="btn-form btn-cancel">Cancel</a>
+        </div>
+    </form>
+{% endblock %}
