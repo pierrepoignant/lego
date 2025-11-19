@@ -184,13 +184,122 @@ def safe_truncate(value, max_length):
         return str_value[:max_length]
     return str_value
 
+def marketplace_code_to_url(marketplace_code):
+    """
+    Convert marketplace code to Amazon URL domain.
+    First tries to get URL from marketplace table, then falls back to mapping.
+    """
+    if not marketplace_code:
+        return 'https://www.amazon.com'
+    
+    conn = None
+    cursor = None
+    url = None
+    
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
+        
+        # Try to get URL from marketplace table if url column exists
+        cursor.execute("""
+            SELECT url 
+            FROM marketplace 
+            WHERE code = %s
+        """, [marketplace_code])
+        result = cursor.fetchone()
+        
+        if result and result.get('url'):
+            url = result['url']
+    except Exception:
+        # URL column doesn't exist or query failed, fall back to mapping
+        pass
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+    
+    # If we got a URL from the table, return it
+    if url:
+        return url
+    
+    # Fallback mapping if URL column doesn't exist
+    marketplace_domains = {
+        'US': 'amazon.com',
+        'DE': 'amazon.de',
+        'UK': 'amazon.co.uk',
+        'FR': 'amazon.fr',
+        'IT': 'amazon.it',
+        'ES': 'amazon.es',
+        'JP': 'amazon.co.jp',
+        'CA': 'amazon.ca',
+        'AU': 'amazon.com.au',
+        'IN': 'amazon.in',
+        'BR': 'amazon.com.br',
+        'MX': 'amazon.com.mx',
+        'NL': 'amazon.nl',
+        'SE': 'amazon.se',
+        'PL': 'amazon.pl',
+        'BE': 'amazon.com.be',
+        'AE': 'amazon.ae',
+        'SA': 'amazon.sa',
+        'TR': 'amazon.com.tr',
+        'SG': 'amazon.sg'
+    }
+    domain = marketplace_domains.get(marketplace_code, 'amazon.com')
+    return f'https://www.{domain}'
+
+def get_marketplace_with_sales(asin_str, month='2025-10-01'):
+    """
+    Get the marketplace with highest sales for an ASIN in a given month.
+    Excludes US marketplace since we're retrying after a US 404.
+    Returns the marketplace code or None if no sales found.
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
+    
+    try:
+        # Query the summary table for October 2025 sales, ordered by sales descending
+        # Exclude US since we're retrying after a US 404
+        query = """
+            SELECT 
+                s.marketplace,
+                SUM(s.value) as total_sales
+            FROM financials_summary_monthly_asin_marketplace s
+            INNER JOIN asin a ON s.asin_id = a.id
+            WHERE a.asin = %s
+            AND s.month = %s
+            AND s.metric = 'Net revenue'
+            AND s.marketplace != 'ALL'
+            AND s.marketplace != 'US'
+            GROUP BY s.marketplace
+            ORDER BY total_sales DESC
+            LIMIT 1
+        """
+        
+        cursor.execute(query, [asin_str, month])
+        result = cursor.fetchone()
+        
+        cursor.close()
+        conn.close()
+        
+        if result and result.get('marketplace'):
+            return result['marketplace']
+        return None
+        
+    except Exception as e:
+        print(f"  ⚠ Error querying marketplace sales: {str(e)}")
+        cursor.close()
+        conn.close()
+        return None
+
 def scrape_and_save_asin(asin, api_key):
     """Scrape ASIN data from Pangolin and save to database"""
     
     # Pangolin API endpoint
     pangolin_url = 'https://scrapeapi.pangolinfo.com/api/v1/scrape'
     
-    # Construct the Amazon product URL
+    # Try Amazon.com first
     amazon_url = f'https://www.amazon.com/dp/{asin}'
     
     headers = {
@@ -208,12 +317,44 @@ def scrape_and_save_asin(asin, api_key):
     }
     
     try:
-        print(f"  Calling Pangolin API...", end='', flush=True)
+        print(f"  Calling Pangolin API (amazon.com)...", end='', flush=True)
         response = requests.post(pangolin_url, json=payload, headers=headers, timeout=90)
         response.raise_for_status()
         
         data = response.json()
         print(" ✓")
+        
+        # Check if we got a 404 status_code in the response
+        should_retry = False
+        retry_marketplace = None
+        if data.get('code') == 0 and data.get('data'):
+            json_array = data.get('data', {}).get('json', [])
+            if json_array and len(json_array) > 0:
+                status_code = json_array[0].get('status_code')
+                if status_code == '404' or status_code == 404:
+                    should_retry = True
+                    # Look up which marketplace had sales in October 2025
+                    print(f"  ⚠ Got 404, looking up marketplace with sales...", end='', flush=True)
+                    retry_marketplace = get_marketplace_with_sales(asin, '2025-10-01')
+                    
+                    if retry_marketplace:
+                        print(f" found {retry_marketplace}, retrying...", end='', flush=True)
+                    else:
+                        # Fallback to amazon.de if no marketplace found
+                        retry_marketplace = 'DE'
+                        print(f" no marketplace found, defaulting to amazon.de...", end='', flush=True)
+        
+        # If we got a 404, retry with the marketplace that had sales
+        if should_retry:
+            amazon_domain = marketplace_code_to_url(retry_marketplace)
+            amazon_url = f'{amazon_domain}/dp/{asin}'
+            payload['url'] = amazon_url
+            
+            response = requests.post(pangolin_url, json=payload, headers=headers, timeout=90)
+            response.raise_for_status()
+            
+            data = response.json()
+            print(" ✓")
         
         # Extract relevant fields from the response
         product_data = {}
