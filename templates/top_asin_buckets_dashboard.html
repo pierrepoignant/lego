@@ -1,0 +1,588 @@
+{% extends "base.html" %}
+
+{% block title %}Big Buckets{% endblock %}
+
+{% block content %}
+<style>
+    .categories-dashboard-container {
+        max-width: 100%;
+        margin: 0 auto;
+        padding: 20px;
+        overflow-x: auto;
+    }
+
+    .dashboard-header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+
+    .dashboard-header h1 {
+        color: #04122C;
+        font-size: 2rem;
+        margin-bottom: 10px;
+    }
+
+    .dashboard-header p {
+        color: #666;
+        font-size: 1rem;
+    }
+
+    .load-button-container {
+        text-align: center;
+        margin: 30px 0;
+    }
+
+    .btn-load {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 15px 40px;
+        border: none;
+        border-radius: 8px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-load:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+    }
+
+    .dashboard-table-container {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        padding: 20px;
+        margin-top: 30px;
+        overflow-x: auto;
+    }
+
+    .dashboard-table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 800px;
+    }
+
+    .dashboard-table thead th {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 15px;
+        text-align: center;
+        font-weight: 600;
+        border: 1px solid #5a67d8;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+
+    .dashboard-table thead th:first-child {
+        text-align: left;
+        min-width: 200px;
+    }
+
+    .dashboard-table tbody td {
+        padding: 12px 15px;
+        border: 1px solid #e2e8f0;
+        text-align: right;
+    }
+
+    .dashboard-table tbody td:first-child {
+        text-align: left;
+        font-weight: 600;
+        background-color: #f7fafc;
+        color: #2d3748;
+    }
+
+    .dashboard-table tbody tr:hover {
+        background-color: #f8f9ff;
+    }
+
+    .positive {
+        color: #38a169;
+        font-weight: 600;
+    }
+
+    .negative {
+        color: #e53e3e;
+        font-weight: 600;
+    }
+    
+    .ebitda-green {
+        color: #38a169;
+        font-weight: 600;
+    }
+    
+    .ebitda-orange {
+        color: #ed8936;
+        font-weight: 600;
+    }
+    
+    .ebitda-red {
+        color: #e53e3e;
+        font-weight: 600;
+    }
+
+    .loading-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 9999;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .loading-overlay.active {
+        display: flex;
+    }
+
+    .loading-popup {
+        background: white;
+        padding: 40px;
+        border-radius: 16px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        text-align: center;
+    }
+
+    .loading-spinner {
+        width: 60px;
+        height: 60px;
+        border: 6px solid #f3f3f3;
+        border-top: 6px solid #667eea;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 20px;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .loading-text {
+        color: #04122C;
+        font-size: 1.2rem;
+        font-weight: 600;
+    }
+    
+    .btn-load:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+</style>
+
+<div class="categories-dashboard-container">
+    <div class="dashboard-header">
+        <h1>📊 Big Buckets</h1>
+        <p>Comprehensive view of all buckets with key performance metrics</p>
+    </div>
+
+    <div class="load-button-container">
+        <button class="btn-load" onclick="loadBucket('good_brands')">📊 Load Good Brands</button>
+        <button class="btn-load" onclick="loadBucket('category_managed_brands')" style="margin-left: 10px;">📊 Load Category Managed Brands</button>
+        <button class="btn-load" onclick="loadBucket('top_asin_buckets')" style="margin-left: 10px;">📊 Load Top ASIN Buckets</button>
+        <button class="btn-load" onclick="loadBucket('others')" style="margin-left: 10px;">📊 Load Others</button>
+    </div>
+
+    <div class="dashboard-table-container" id="tableContainer" style="display: none;">
+        <table class="dashboard-table">
+            <thead id="tableHead">
+                <!-- Headers will be dynamically populated -->
+            </thead>
+            <tbody id="tableBody">
+                <!-- Data will be dynamically populated -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-popup">
+        <div class="loading-spinner"></div>
+        <div class="loading-text" id="loadingText">Loading data...</div>
+    </div>
+</div>
+
+<script>
+    // EBITDA color thresholds from config.ini
+    const EBITDA_GREEN_THRESHOLD = {{ ebitda_green }};
+    const EBITDA_ORANGE_THRESHOLD = {{ ebitda_orange }};
+    
+    function getEbitdaColorClass(value) {
+        if (value >= EBITDA_GREEN_THRESHOLD) {
+            return 'ebitda-green';
+        } else if (value >= EBITDA_ORANGE_THRESHOLD) {
+            return 'ebitda-orange';
+        } else {
+            return 'ebitda-red';
+        }
+    }
+    
+    let currentData = {
+        good_brands: null,
+        category_managed_brands: null,
+        top_asin_buckets: null,
+        others: null
+    };
+    
+    function loadBucket(bucketType) {
+        console.log('Loading bucket:', bucketType);
+        
+        // Update loading text
+        const bucketNames = {
+            'good_brands': 'Good Brands',
+            'category_managed_brands': 'Category Managed Brands',
+            'top_asin_buckets': 'Top ASIN Buckets',
+            'others': 'Others (by Category)'
+        };
+        document.getElementById('loadingText').textContent = `Loading ${bucketNames[bucketType]}...`;
+        
+        // Show loading overlay
+        document.getElementById('loadingOverlay').classList.add('active');
+        
+        fetch(`/api/top-asin-buckets-dashboard-data?bucket=${bucketType}`)
+            .then(response => {
+                console.log('Response received:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Data received:', data);
+                currentData[bucketType] = data[bucketType];
+                updateTable();
+                
+                // Hide loading overlay
+                document.getElementById('loadingOverlay').classList.remove('active');
+                
+                // Show table
+                document.getElementById('tableContainer').style.display = 'block';
+            })
+            .catch(error => {
+                console.error('Error loading data:', error);
+                alert('Error loading data: ' + error.message);
+                document.getElementById('loadingOverlay').classList.remove('active');
+            });
+    }
+
+    function updateTable() {
+        const tbody = document.getElementById('tableBody');
+        tbody.innerHTML = '';
+        
+        // Build table header
+        const thead = document.getElementById('tableHead');
+        thead.innerHTML = '';
+        const headerRow = document.createElement('tr');
+        const headers = [
+            'Name',
+            'Revenue 2024',
+            'Revenue LTM (Nov 24 - Oct 25)',
+            'Forecast (Nov 25 - Oct 26)',
+            'YoY Growth %',
+            'Brand EBITDA 2024 %',
+            'Brand EBITDA LTM %'
+        ];
+        headers.forEach(header => {
+            const th = document.createElement('th');
+            th.textContent = header;
+            headerRow.appendChild(th);
+        });
+        thead.appendChild(headerRow);
+        
+        let grandTotal = {
+            revenue_2024: 0,
+            revenue_ltm: 0,
+            forecast: 0,
+            cm3_2024: 0,
+            cm3_ltm: 0
+        };
+        
+        // Section 1: Good Brands
+        if (currentData.good_brands && currentData.good_brands.length > 0) {
+            addSectionHeader(tbody, 'Good Brands');
+            const goodBrandsTotal = addSectionRows(tbody, currentData.good_brands);
+            addSubtotalRow(tbody, 'Good Brands Subtotal', goodBrandsTotal);
+            grandTotal.revenue_2024 += goodBrandsTotal.revenue_2024;
+            grandTotal.revenue_ltm += goodBrandsTotal.revenue_ltm;
+            grandTotal.forecast += goodBrandsTotal.forecast;
+            grandTotal.cm3_2024 += goodBrandsTotal.cm3_2024;
+            grandTotal.cm3_ltm += goodBrandsTotal.cm3_ltm;
+        }
+        
+        // Section 2: Category Managed Brands
+        if (currentData.category_managed_brands && currentData.category_managed_brands.length > 0) {
+            addSectionHeader(tbody, 'Category Managed Brands');
+            const categoryManagedTotal = addSectionRows(tbody, currentData.category_managed_brands);
+            addSubtotalRow(tbody, 'Category Managed Brands Subtotal', categoryManagedTotal);
+            grandTotal.revenue_2024 += categoryManagedTotal.revenue_2024;
+            grandTotal.revenue_ltm += categoryManagedTotal.revenue_ltm;
+            grandTotal.forecast += categoryManagedTotal.forecast;
+            grandTotal.cm3_2024 += categoryManagedTotal.cm3_2024;
+            grandTotal.cm3_ltm += categoryManagedTotal.cm3_ltm;
+        }
+        
+        // Section 3: Top ASIN Buckets
+        if (currentData.top_asin_buckets && currentData.top_asin_buckets.length > 0) {
+            addSectionHeader(tbody, 'Top ASIN Buckets');
+            const topAsinBucketsTotal = addSectionRows(tbody, currentData.top_asin_buckets);
+            addSubtotalRow(tbody, 'Top ASIN Buckets Subtotal', topAsinBucketsTotal);
+            grandTotal.revenue_2024 += topAsinBucketsTotal.revenue_2024;
+            grandTotal.revenue_ltm += topAsinBucketsTotal.revenue_ltm;
+            grandTotal.forecast += topAsinBucketsTotal.forecast;
+            grandTotal.cm3_2024 += topAsinBucketsTotal.cm3_2024;
+            grandTotal.cm3_ltm += topAsinBucketsTotal.cm3_ltm;
+        }
+        
+        // Section 4: Others (by Category)
+        if (currentData.others && currentData.others.length > 0) {
+            addSectionHeader(tbody, 'Others (by Category)');
+            const othersTotal = addSectionRows(tbody, currentData.others);
+            addSubtotalRow(tbody, 'Others Subtotal', othersTotal);
+            grandTotal.revenue_2024 += othersTotal.revenue_2024;
+            grandTotal.revenue_ltm += othersTotal.revenue_ltm;
+            grandTotal.forecast += othersTotal.forecast;
+            grandTotal.cm3_2024 += othersTotal.cm3_2024;
+            grandTotal.cm3_ltm += othersTotal.cm3_ltm;
+        }
+        
+        // Grand Total (only if we have data)
+        if (grandTotal.revenue_2024 > 0 || grandTotal.revenue_ltm > 0) {
+            addGrandTotalRow(tbody, grandTotal);
+        }
+    }
+    
+    function addSectionHeader(tbody, sectionName) {
+        const row = document.createElement('tr');
+        row.className = 'section-header';
+        const cell = document.createElement('td');
+        cell.colSpan = 7;
+        cell.textContent = sectionName;
+        cell.style.fontWeight = '700';
+        cell.style.fontSize = '1.1rem';
+        cell.style.padding = '15px';
+        cell.style.backgroundColor = '#e2e8f0';
+        cell.style.color = '#2d3748';
+        row.appendChild(cell);
+        tbody.appendChild(row);
+    }
+    
+    function addSectionRows(tbody, items) {
+        const sectionTotal = {
+            revenue_2024: 0,
+            revenue_ltm: 0,
+            forecast: 0,
+            cm3_2024: 0,
+            cm3_ltm: 0
+        };
+        
+        items.forEach(item => {
+            const row = document.createElement('tr');
+            
+            // Name
+            const nameCell = document.createElement('td');
+            nameCell.textContent = item.name;
+            row.appendChild(nameCell);
+            
+            // Revenue 2024
+            const rev2024Cell = document.createElement('td');
+            rev2024Cell.textContent = formatCurrency(item.revenue_2024);
+            row.appendChild(rev2024Cell);
+            sectionTotal.revenue_2024 += item.revenue_2024;
+            
+            // Revenue LTM
+            const revLTMCell = document.createElement('td');
+            revLTMCell.textContent = formatCurrency(item.revenue_ltm);
+            row.appendChild(revLTMCell);
+            sectionTotal.revenue_ltm += item.revenue_ltm;
+            
+            // Forecast
+            const forecastCell = document.createElement('td');
+            forecastCell.textContent = formatCurrency(item.forecast || 0);
+            row.appendChild(forecastCell);
+            sectionTotal.forecast += (item.forecast || 0);
+            
+            // YoY Growth %
+            const yoyCell = document.createElement('td');
+            yoyCell.className = item.yoy_growth >= 0 ? 'positive' : 'negative';
+            yoyCell.textContent = formatPercentage(item.yoy_growth);
+            row.appendChild(yoyCell);
+            
+            // Brand EBITDA 2024 %
+            const ebitda2024Cell = document.createElement('td');
+            ebitda2024Cell.className = getEbitdaColorClass(item.ebitda_2024);
+            ebitda2024Cell.textContent = formatPercentage(item.ebitda_2024);
+            row.appendChild(ebitda2024Cell);
+            sectionTotal.cm3_2024 += (item.cm3_2024 || 0);
+            
+            // Brand EBITDA LTM %
+            const ebitdaLTMCell = document.createElement('td');
+            ebitdaLTMCell.className = getEbitdaColorClass(item.ebitda_ltm);
+            ebitdaLTMCell.textContent = formatPercentage(item.ebitda_ltm);
+            row.appendChild(ebitdaLTMCell);
+            sectionTotal.cm3_ltm += (item.cm3_ltm || 0);
+            
+            tbody.appendChild(row);
+        });
+        
+        return sectionTotal;
+    }
+    
+    function addSubtotalRow(tbody, label, totals) {
+        const row = document.createElement('tr');
+        row.className = 'subtotal-row';
+        
+        const yoy_growth = totals.revenue_2024 > 0 ? ((totals.revenue_ltm - totals.revenue_2024) / totals.revenue_2024 * 100) : 0;
+        const ebitda_2024 = totals.revenue_2024 > 0 ? (totals.cm3_2024 / totals.revenue_2024 * 100) : 0;
+        const ebitda_ltm = totals.revenue_ltm > 0 ? (totals.cm3_ltm / totals.revenue_ltm * 100) : 0;
+        
+        // Label
+        const labelCell = document.createElement('td');
+        labelCell.textContent = label;
+        labelCell.style.fontWeight = '600';
+        labelCell.style.backgroundColor = '#f7fafc';
+        row.appendChild(labelCell);
+        
+        // Revenue 2024
+        const rev2024Cell = document.createElement('td');
+        rev2024Cell.textContent = formatCurrency(totals.revenue_2024);
+        rev2024Cell.style.fontWeight = '600';
+        rev2024Cell.style.backgroundColor = '#f7fafc';
+        row.appendChild(rev2024Cell);
+        
+        // Revenue LTM
+        const revLTMCell = document.createElement('td');
+        revLTMCell.textContent = formatCurrency(totals.revenue_ltm);
+        revLTMCell.style.fontWeight = '600';
+        revLTMCell.style.backgroundColor = '#f7fafc';
+        row.appendChild(revLTMCell);
+        
+        // Forecast
+        const forecastCell = document.createElement('td');
+        forecastCell.textContent = formatCurrency(totals.forecast || 0);
+        forecastCell.style.fontWeight = '600';
+        forecastCell.style.backgroundColor = '#f7fafc';
+        row.appendChild(forecastCell);
+        
+        // YoY Growth %
+        const yoyCell = document.createElement('td');
+        yoyCell.className = yoy_growth >= 0 ? 'positive' : 'negative';
+        yoyCell.textContent = formatPercentage(yoy_growth);
+        yoyCell.style.fontWeight = '600';
+        yoyCell.style.backgroundColor = '#f7fafc';
+        row.appendChild(yoyCell);
+        
+        // Brand EBITDA 2024 %
+        const ebitda2024Cell = document.createElement('td');
+        ebitda2024Cell.className = getEbitdaColorClass(ebitda_2024);
+        ebitda2024Cell.textContent = formatPercentage(ebitda_2024);
+        ebitda2024Cell.style.fontWeight = '600';
+        ebitda2024Cell.style.backgroundColor = '#f7fafc';
+        row.appendChild(ebitda2024Cell);
+        
+        // Brand EBITDA LTM %
+        const ebitdaLTMCell = document.createElement('td');
+        ebitdaLTMCell.className = getEbitdaColorClass(ebitda_ltm);
+        ebitdaLTMCell.textContent = formatPercentage(ebitda_ltm);
+        ebitdaLTMCell.style.fontWeight = '600';
+        ebitdaLTMCell.style.backgroundColor = '#f7fafc';
+        row.appendChild(ebitdaLTMCell);
+        
+        tbody.appendChild(row);
+    }
+    
+    function addGrandTotalRow(tbody, totals) {
+        const row = document.createElement('tr');
+        row.className = 'grand-total-row';
+        
+        const yoy_growth = totals.revenue_2024 > 0 ? ((totals.revenue_ltm - totals.revenue_2024) / totals.revenue_2024 * 100) : 0;
+        const ebitda_2024 = totals.revenue_2024 > 0 ? (totals.cm3_2024 / totals.revenue_2024 * 100) : 0;
+        const ebitda_ltm = totals.revenue_ltm > 0 ? (totals.cm3_ltm / totals.revenue_ltm * 100) : 0;
+        
+        // Label
+        const labelCell = document.createElement('td');
+        labelCell.textContent = 'Grand Total';
+        labelCell.style.fontWeight = '700';
+        labelCell.style.fontSize = '1.1rem';
+        labelCell.style.backgroundColor = '#667eea';
+        labelCell.style.color = 'white';
+        row.appendChild(labelCell);
+        
+        // Revenue 2024
+        const rev2024Cell = document.createElement('td');
+        rev2024Cell.textContent = formatCurrency(totals.revenue_2024);
+        rev2024Cell.style.fontWeight = '700';
+        rev2024Cell.style.fontSize = '1.1rem';
+        rev2024Cell.style.backgroundColor = '#667eea';
+        rev2024Cell.style.color = 'white';
+        row.appendChild(rev2024Cell);
+        
+        // Revenue LTM
+        const revLTMCell = document.createElement('td');
+        revLTMCell.textContent = formatCurrency(totals.revenue_ltm);
+        revLTMCell.style.fontWeight = '700';
+        revLTMCell.style.fontSize = '1.1rem';
+        revLTMCell.style.backgroundColor = '#667eea';
+        revLTMCell.style.color = 'white';
+        row.appendChild(revLTMCell);
+        
+        // Forecast
+        const forecastCell = document.createElement('td');
+        forecastCell.textContent = formatCurrency(totals.forecast || 0);
+        forecastCell.style.fontWeight = '700';
+        forecastCell.style.fontSize = '1.1rem';
+        forecastCell.style.backgroundColor = '#667eea';
+        forecastCell.style.color = 'white';
+        row.appendChild(forecastCell);
+        
+        // YoY Growth %
+        const yoyCell = document.createElement('td');
+        yoyCell.className = yoy_growth >= 0 ? 'positive' : 'negative';
+        yoyCell.textContent = formatPercentage(yoy_growth);
+        yoyCell.style.fontWeight = '700';
+        yoyCell.style.fontSize = '1.1rem';
+        yoyCell.style.backgroundColor = '#667eea';
+        yoyCell.style.color = 'white';
+        row.appendChild(yoyCell);
+        
+        // Brand EBITDA 2024 %
+        const ebitda2024Cell = document.createElement('td');
+        ebitda2024Cell.className = getEbitdaColorClass(ebitda_2024);
+        ebitda2024Cell.textContent = formatPercentage(ebitda_2024);
+        ebitda2024Cell.style.fontWeight = '700';
+        ebitda2024Cell.style.fontSize = '1.1rem';
+        ebitda2024Cell.style.backgroundColor = '#667eea';
+        ebitda2024Cell.style.color = 'white';
+        row.appendChild(ebitda2024Cell);
+        
+        // Brand EBITDA LTM %
+        const ebitdaLTMCell = document.createElement('td');
+        ebitdaLTMCell.className = getEbitdaColorClass(ebitda_ltm);
+        ebitdaLTMCell.textContent = formatPercentage(ebitda_ltm);
+        ebitdaLTMCell.style.fontWeight = '700';
+        ebitdaLTMCell.style.fontSize = '1.1rem';
+        ebitdaLTMCell.style.backgroundColor = '#667eea';
+        ebitdaLTMCell.style.color = 'white';
+        row.appendChild(ebitdaLTMCell);
+        
+        tbody.appendChild(row);
+    }
+
+    function formatCurrency(value) {
+        if (value === null || value === undefined) return '-';
+        return '$' + value.toLocaleString('en-US', {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        });
+    }
+
+    function formatPercentage(value) {
+        if (value === null || value === undefined) return '-';
+        return value.toFixed(1) + '%';
+    }
+</script>
+{% endblock %}
+

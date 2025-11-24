@@ -221,6 +221,12 @@
                     </div>
                 </div>
                 
+                <!-- Search -->
+                <a href="{{ url_for('search') }}" class="btn btn-primary">🔍 Search</a>
+                
+                <!-- Comments -->
+                <a href="{{ url_for('comments_list') }}" class="btn btn-secondary">💬 Comments</a>
+                
                 <!-- Stats Dropdown -->
                 <div class="dropdown">
                     <button class="dropdown-toggle">📊 Stats</button>
@@ -229,6 +235,10 @@
                         <a href="{{ url_for('forecast_dashboard') }}">🔮 Dashboard Forecast</a>
                         <a href="{{ url_for('profitability') }}">💰 Profitability</a>
                         <a href="{{ url_for('categories_dashboard') }}">📦 Categories</a>
+                        <a href="{{ url_for('top_asin_buckets_dashboard') }}">📊 Big Buckets</a>
+                        {% if session.is_admin %}
+                        <a href="{{ url_for('users_list') }}">👥 Users</a>
+                        {% endif %}
                     </div>
                 </div>
                 

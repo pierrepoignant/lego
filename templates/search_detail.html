@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+
+{% block title %}Search Term: {{ search_term }}{% endblock %}
+
+{% block page_title %}📊 Search Term Evolution: {{ search_term }}{% endblock %}
+
+{% block extra_styles %}
+    .detail-header {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 25px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .detail-header h2 {
+        color: #2d3748;
+        margin-bottom: 10px;
+    }
+    
+    .back-link {
+        display: inline-block;
+        margin-bottom: 20px;
+        color: #667eea;
+        text-decoration: none;
+        font-weight: 500;
+    }
+    
+    .back-link:hover {
+        text-decoration: underline;
+    }
+    
+    .chart-container {
+        background: white;
+        padding: 30px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        margin-bottom: 25px;
+    }
+    
+    .chart-title {
+        color: #2d3748;
+        margin-bottom: 20px;
+        font-size: 1.2rem;
+        font-weight: 600;
+    }
+    
+    .info-box {
+        background: #f7fafc;
+        padding: 20px;
+        border-radius: 8px;
+        border-left: 4px solid #667eea;
+        margin-bottom: 20px;
+    }
+    
+    .info-box p {
+        color: #4a5568;
+        line-height: 1.6;
+        margin: 5px 0;
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-bottom: 25px;
+    }
+    
+    .stat-card {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        text-align: center;
+    }
+    
+    .stat-label {
+        display: block;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #718096;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 8px;
+    }
+    
+    .stat-value {
+        display: block;
+        font-size: 2rem;
+        font-weight: 700;
+        color: #2d3748;
+    }
+    
+    .stat-value.positive {
+        color: #38a169;
+    }
+    
+    .stat-value.negative {
+        color: #e53e3e;
+    }
+{% endblock %}
+
+{% block content %}
+    <a href="{{ url_for('search') }}" class="back-link">← Back to Search</a>
+    
+    <div class="detail-header">
+        <h2>{{ search_term }}</h2>
+        <p style="color: #718096; margin: 0;">Search frequency rank evolution over time</p>
+    </div>
+    
+    {% if ranks|length > 0 %}
+    <div class="stats-grid">
+        <div class="stat-card">
+            <span class="stat-label">Current Rank</span>
+            <span class="stat-value">{{ ranks[-1] }}</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-label">Best Rank</span>
+            <span class="stat-value positive">{{ ranks|min }}</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-label">Worst Rank</span>
+            <span class="stat-value negative">{{ ranks|max }}</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-label">Data Points</span>
+            <span class="stat-value">{{ ranks|length }}</span>
+        </div>
+    </div>
+    
+    <div class="chart-container">
+        <div class="chart-title">Search Frequency Rank Over Time</div>
+        <canvas id="rankChart" style="max-height: 400px;"></canvas>
+    </div>
+    {% else %}
+    <div class="info-box">
+        <p>No data available for this search term.</p>
+    </div>
+    {% endif %}
+{% endblock %}
+
+{% block scripts %}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        {% if ranks|length > 0 %}
+        const ctx = document.getElementById('rankChart').getContext('2d');
+        
+        const dates = {{ dates|tojson|safe }};
+        const ranks = {{ ranks|tojson|safe }};
+        
+        // Reverse the data so lower rank (better) is at the top
+        const reversedRanks = ranks.map(rank => rank);
+        
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: dates,
+                datasets: [{
+                    label: 'Search Frequency Rank',
+                    data: reversedRanks,
+                    borderColor: '#667eea',
+                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    pointBackgroundColor: '#667eea',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        reverse: true, // Reverse Y axis so rank 1 is at top
+                        title: {
+                            display: true,
+                            text: 'Search Frequency Rank (lower is better)'
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Date'
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    }
+                },
+                interaction: {
+                    mode: 'nearest',
+                    axis: 'x',
+                    intersect: false
+                }
+            }
+        });
+        {% endif %}
+    </script>
+{% endblock %}
+

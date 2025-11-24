@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block title %}Search Stats{% endblock %}
+
+{% block page_title %}🔍 Search Stats{% endblock %}
+
+{% block extra_styles %}
+    .search-section {
+        background: #f7fafc;
+        padding: 30px;
+        border-radius: 8px;
+        margin-bottom: 25px;
+    }
+    
+    .search-form {
+        display: flex;
+        gap: 15px;
+        align-items: end;
+        flex-wrap: wrap;
+    }
+    
+    .form-group {
+        flex: 1;
+        min-width: 200px;
+    }
+    
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #4a5568;
+        font-size: 0.875rem;
+    }
+    
+    .form-group select,
+    .form-group input {
+        width: 100%;
+        padding: 12px 15px;
+        font-size: 14px;
+        border: 2px solid #e2e8f0;
+        border-radius: 6px;
+        background: white;
+    }
+    
+    .form-group select:focus,
+    .form-group input:focus {
+        outline: none;
+        border-color: #667eea;
+    }
+    
+    .search-btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 12px 30px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 14px;
+        transition: all 0.2s;
+        white-space: nowrap;
+    }
+    
+    .search-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    .browse-btn {
+        background: #48bb78;
+        color: white;
+        border: none;
+        padding: 12px 30px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 14px;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: inline-block;
+        white-space: nowrap;
+    }
+    
+    .browse-btn:hover {
+        background: #38a169;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(72, 187, 120, 0.4);
+    }
+    
+    .info-box {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        border-left: 4px solid #667eea;
+        margin-bottom: 20px;
+    }
+    
+    .info-box h3 {
+        color: #2d3748;
+        margin-bottom: 10px;
+        font-size: 1.1rem;
+    }
+    
+    .info-box p {
+        color: #4a5568;
+        line-height: 1.6;
+        margin: 5px 0;
+    }
+    
+    .search-types {
+        display: flex;
+        gap: 10px;
+        margin-top: 10px;
+    }
+    
+    .search-type-badge {
+        padding: 6px 12px;
+        background: #e2e8f0;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #4a5568;
+    }
+{% endblock %}
+
+{% block content %}
+    <div class="info-box">
+        <h3>📊 Search Statistics</h3>
+        <p>Search through Amazon search data to find search terms, brands, and ASINs.</p>
+        <div class="search-types">
+            <span class="search-type-badge">🔍 Search Term</span>
+            <span class="search-type-badge">🏢 Brand</span>
+            <span class="search-type-badge">📦 ASIN</span>
+        </div>
+    </div>
+    
+    <div class="search-section">
+        <form method="POST" action="{{ url_for('search_query') }}" class="search-form">
+            <div class="form-group">
+                <label for="search_type">Search Type</label>
+                <select name="search_type" id="search_type" required>
+                    <option value="search_term">Search Term</option>
+                    <option value="brand">Brand</option>
+                    <option value="asin">ASIN</option>
+                </select>
+            </div>
+            
+            <div class="form-group" style="flex: 2;">
+                <label for="query">Search Query</label>
+                <input type="text" 
+                       name="query" 
+                       id="query" 
+                       placeholder="Enter your search term, brand, or ASIN..." 
+                       required
+                       autofocus>
+            </div>
+            
+            <div class="form-group">
+                <label>&nbsp;</label>
+                <button type="submit" class="search-btn">🔍 Search</button>
+            </div>
+        </form>
+        
+        <div style="margin-top: 20px; text-align: center;">
+            <a href="{{ url_for('search_browse') }}" class="browse-btn">📋 Browse All Search Terms</a>
+        </div>
+    </div>
+{% endblock %}
+

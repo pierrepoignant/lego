@@ -1,0 +1,439 @@
+{% extends "base.html" %}
+
+{% block title %}Search Results{% endblock %}
+
+{% block page_title %}🔍 Search Results{% endblock %}
+
+{% block extra_styles %}
+    .search-section {
+        background: #f7fafc;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 25px;
+    }
+    
+    .search-form {
+        display: flex;
+        gap: 15px;
+        align-items: end;
+        flex-wrap: wrap;
+    }
+    
+    .form-group {
+        flex: 1;
+        min-width: 200px;
+    }
+    
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #4a5568;
+        font-size: 0.875rem;
+    }
+    
+    .form-group select,
+    .form-group input {
+        width: 100%;
+        padding: 12px 15px;
+        font-size: 14px;
+        border: 2px solid #e2e8f0;
+        border-radius: 6px;
+        background: white;
+    }
+    
+    .form-group select:focus,
+    .form-group input:focus {
+        outline: none;
+        border-color: #667eea;
+    }
+    
+    .search-btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 12px 30px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 14px;
+        transition: all 0.2s;
+        white-space: nowrap;
+    }
+    
+    .search-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    .results-info {
+        background: white;
+        padding: 15px 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    
+    .results-count {
+        font-weight: 600;
+        color: #2d3748;
+    }
+    
+    .results-date {
+        color: #718096;
+        font-size: 0.875rem;
+    }
+    
+    .amazon-search-btn {
+        background: #ff9900;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 14px;
+        text-decoration: none;
+        display: inline-block;
+        transition: all 0.2s;
+    }
+    
+    .amazon-search-btn:hover {
+        background: #e68900;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(255, 153, 0, 0.3);
+    }
+    
+    .results-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+    }
+    
+    .results-table thead {
+        background: #667eea;
+        color: white;
+    }
+    
+    .results-table th {
+        padding: 15px;
+        text-align: left;
+        font-weight: 600;
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .results-table td {
+        padding: 15px;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    
+    .results-table tbody tr {
+        transition: background-color 0.2s;
+    }
+    
+    .results-table tbody tr:hover {
+        background: #f7fafc;
+    }
+    
+    .results-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+    
+    .search-term-link {
+        color: #667eea;
+        text-decoration: none;
+        font-weight: 500;
+        font-size: 14px;
+    }
+    
+    .search-term-link:hover {
+        text-decoration: underline;
+    }
+    
+    .rank-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        background: #667eea;
+        color: white;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    
+    .brand-tag {
+        display: inline-block;
+        padding: 4px 8px;
+        background: #e2e8f0;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        color: #4a5568;
+        margin: 2px;
+        transition: all 0.2s;
+    }
+    
+    .brand-tag:hover {
+        background: #667eea;
+        color: white;
+        transform: translateY(-1px);
+    }
+    
+    .asin-link {
+        color: #667eea;
+        text-decoration: none;
+        font-weight: 500;
+        font-family: monospace;
+        font-size: 13px;
+    }
+    
+    .asin-link:hover {
+        text-decoration: underline;
+    }
+    
+    .pagination-wrapper {
+        background: white;
+        padding: 15px 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .pagination {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+    
+    .pagination a,
+    .pagination span {
+        padding: 8px 16px;
+        background: #f7fafc;
+        border-radius: 6px;
+        text-decoration: none;
+        color: #667eea;
+        font-weight: 600;
+        transition: all 0.2s;
+        border: 2px solid transparent;
+    }
+    
+    .pagination a:hover {
+        background: #667eea;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+    }
+    
+    .pagination .active {
+        background: #667eea;
+        color: white;
+        border: 2px solid #5568d3;
+    }
+    
+    .pagination .disabled {
+        opacity: 0.4;
+        pointer-events: none;
+        background: #f7fafc;
+        color: #a0aec0;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #718096;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .empty-state h3 {
+        font-size: 1.5rem;
+        margin-bottom: 10px;
+        color: #4a5568;
+    }
+    
+    .empty-state p {
+        font-size: 16px;
+        margin-top: 10px;
+        color: #718096;
+    }
+    
+    .back-link {
+        display: inline-block;
+        margin-bottom: 20px;
+        color: #667eea;
+        text-decoration: none;
+        font-weight: 500;
+    }
+    
+    .back-link:hover {
+        text-decoration: underline;
+    }
+{% endblock %}
+
+{% block content %}
+    <a href="{{ url_for('search') }}" class="back-link">← Back to Search</a>
+    
+    {% if search_type != 'browse_all' %}
+    <div class="search-section">
+        <form method="POST" action="{{ url_for('search_query') }}" class="search-form">
+            <div class="form-group">
+                <label for="search_type">Search Type</label>
+                <select name="search_type" id="search_type" required>
+                    <option value="search_term" {% if search_type == 'search_term' %}selected{% endif %}>Search Term</option>
+                    <option value="brand" {% if search_type == 'brand' %}selected{% endif %}>Brand</option>
+                    <option value="asin" {% if search_type == 'asin' %}selected{% endif %}>ASIN</option>
+                </select>
+            </div>
+            
+            <div class="form-group" style="flex: 2;">
+                <label for="query">Search Query</label>
+                <input type="text" 
+                       name="query" 
+                       id="query" 
+                       value="{{ query }}"
+                       placeholder="Enter your search term, brand, or ASIN..." 
+                       required>
+            </div>
+            
+            <div class="form-group">
+                <label>&nbsp;</label>
+                <button type="submit" class="search-btn">🔍 Search</button>
+            </div>
+        </form>
+    </div>
+    {% endif %}
+    
+    {% if results %}
+    <div class="results-info">
+        <div>
+            <span class="results-count">Found {{ total }} result{{ 's' if total != 1 else '' }}</span>
+            {% if latest_date %}
+            <span class="results-date">(Latest data: {{ latest_date }})</span>
+            {% endif %}
+        </div>
+        <div>
+            <span class="results-date">Page {{ page }} of {{ total_pages }}</span>
+        </div>
+    </div>
+    
+    <table class="results-table">
+        <thead>
+            <tr>
+                <th>Rank</th>
+                <th>Search Term</th>
+                <th>Top Brands</th>
+                <th>Top ASINs</th>
+                <th>Amazon</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for result in results %}
+            <tr>
+                <td>
+                    <span class="rank-badge">#{{ result.search_frequency_rank }}</span>
+                </td>
+                <td>
+                    <a href="{{ url_for('search_detail', search_term=result.search_term) }}" class="search-term-link">
+                        {{ result.search_term }}
+                    </a>
+                </td>
+                <td>
+                    {% if result.top_clicked_brand_1 %}
+                        <span class="brand-tag">{{ result.top_clicked_brand_1 }}</span>
+                    {% endif %}
+                    {% if result.top_clicked_brands_2 %}
+                        <span class="brand-tag" style="margin-left: 4px;">{{ result.top_clicked_brands_2 }}</span>
+                    {% endif %}
+                    {% if result.top_clicked_brands_3 %}
+                        <span class="brand-tag" style="margin-left: 4px;">{{ result.top_clicked_brands_3 }}</span>
+                    {% endif %}
+                    {% if not result.top_clicked_brand_1 and not result.top_clicked_brands_2 and not result.top_clicked_brands_3 %}
+                        <span style="color: #a0aec0; font-style: italic;">-</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if result.top_clicked_product_1_asin %}
+                        <a href="{{ url_for('view_asin', asin_code=result.top_clicked_product_1_asin) }}" class="asin-link">{{ result.top_clicked_product_1_asin }}</a>
+                    {% endif %}
+                    {% if result.top_clicked_product_2_asin %}
+                        <a href="{{ url_for('view_asin', asin_code=result.top_clicked_product_2_asin) }}" class="asin-link" style="margin-left: 8px;">{{ result.top_clicked_product_2_asin }}</a>
+                    {% endif %}
+                    {% if result.top_clicked_product_3_asin %}
+                        <a href="{{ url_for('view_asin', asin_code=result.top_clicked_product_3_asin) }}" class="asin-link" style="margin-left: 8px;">{{ result.top_clicked_product_3_asin }}</a>
+                    {% endif %}
+                    {% if not result.top_clicked_product_1_asin and not result.top_clicked_product_2_asin and not result.top_clicked_product_3_asin %}
+                        <span style="color: #a0aec0; font-style: italic;">-</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="https://www.amazon.com/s?k={{ result.search_term|replace(' ', '+') }}" target="_blank" class="amazon-search-btn" style="padding: 6px 12px; font-size: 12px;">
+                        🛒 Amazon
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    <div class="pagination-wrapper">
+        <div class="pagination">
+            {% if search_type == 'browse_all' %}
+                {% if page > 1 %}
+                <a href="{{ url_for('search_browse', page=1) }}">⏮️ First</a>
+                <a href="{{ url_for('search_browse', page=page-1) }}">◀️ Prev</a>
+                {% else %}
+                <span class="disabled">⏮️ First</span>
+                <span class="disabled">◀️ Prev</span>
+                {% endif %}
+                
+                <span class="active">{{ page }}</span>
+                
+                {% if page < total_pages %}
+                <a href="{{ url_for('search_browse', page=page+1) }}">Next ▶️</a>
+                <a href="{{ url_for('search_browse', page=total_pages) }}">Last ⏭️</a>
+                {% else %}
+                <span class="disabled">Next ▶️</span>
+                <span class="disabled">Last ⏭️</span>
+                {% endif %}
+            {% else %}
+                {% if page > 1 %}
+                <a href="{{ url_for('search_query', search_type=search_type, query=query, page=1) }}">⏮️ First</a>
+                <a href="{{ url_for('search_query', search_type=search_type, query=query, page=page-1) }}">◀️ Prev</a>
+                {% else %}
+                <span class="disabled">⏮️ First</span>
+                <span class="disabled">◀️ Prev</span>
+                {% endif %}
+                
+                <span class="active">{{ page }}</span>
+                
+                {% if page < total_pages %}
+                <a href="{{ url_for('search_query', search_type=search_type, query=query, page=page+1) }}">Next ▶️</a>
+                <a href="{{ url_for('search_query', search_type=search_type, query=query, page=total_pages) }}">Last ⏭️</a>
+                {% else %}
+                <span class="disabled">Next ▶️</span>
+                <span class="disabled">Last ⏭️</span>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+    
+    {% else %}
+    <div class="empty-state">
+        <h3>No results found</h3>
+        <p>{% if query %}Try adjusting your search query "{{ query }}".{% else %}Try a different search.{% endif %}</p>
+    </div>
+    {% endif %}
+{% endblock %}
+
